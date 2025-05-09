@@ -1,0 +1,9 @@
+{
+	"name": "gfr-datafactory",
+	"location": "uksouth",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "90c59787-0141-4447-8be0-b5e25290634f",
+		"tenantId": "02045b3b-9790-4008-b83c-d155576e6c7e"
+	}
+}

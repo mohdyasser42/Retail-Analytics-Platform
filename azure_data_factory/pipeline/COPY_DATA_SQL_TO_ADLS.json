@@ -1,0 +1,152 @@
+{
+	"name": "COPY_DATA_SQL_TO_ADLS",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach_mnv",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.cw_items",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy_mnv",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "GlobalFashion.@{item().source.table}"
+								},
+								{
+									"name": "Destination",
+									"value": "global-fashion-retails-data/bronze/@{item().destination.fileName}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": true,
+								"stagingSettings": {
+									"linkedServiceName": {
+										"referenceName": "GFR_ADLS_Connection",
+										"type": "LinkedServiceReference"
+									},
+									"path": "global-fashion-retails-data/bronze"
+								},
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SourceDataset_mnv",
+									"type": "DatasetReference",
+									"parameters": {
+										"cw_table": "@item().source.table"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DestinationDataset_mnv",
+									"type": "DatasetReference",
+									"parameters": {
+										"cw_fileName": "@item().destination.fileName"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"cw_items": {
+				"type": "Array",
+				"defaultValue": [
+					{
+						"source": {
+							"table": "Customers"
+						},
+						"destination": {
+							"fileName": "GlobalFashion.Customers.csv"
+						}
+					},
+					{
+						"source": {
+							"table": "Discounts"
+						},
+						"destination": {
+							"fileName": "GlobalFashion.Discounts.csv"
+						}
+					},
+					{
+						"source": {
+							"table": "Employees"
+						},
+						"destination": {
+							"fileName": "GlobalFashion.Employees.csv"
+						}
+					},
+					{
+						"source": {
+							"table": "Products"
+						},
+						"destination": {
+							"fileName": "GlobalFashion.Products.csv"
+						}
+					},
+					{
+						"source": {
+							"table": "Stores"
+						},
+						"destination": {
+							"fileName": "GlobalFashion.Stores.csv"
+						}
+					},
+					{
+						"source": {
+							"table": "Transactions"
+						},
+						"destination": {
+							"fileName": "GlobalFashion.Transactions.csv"
+						}
+					}
+				]
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-05-09T13:38:33Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

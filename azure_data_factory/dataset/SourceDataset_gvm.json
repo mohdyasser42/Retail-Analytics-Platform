@@ -1,0 +1,25 @@
+{
+	"name": "SourceDataset_gvm",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_Raw_Database",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"cw_table": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "GlobalFashion",
+			"table": {
+				"value": "@dataset().cw_table",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
