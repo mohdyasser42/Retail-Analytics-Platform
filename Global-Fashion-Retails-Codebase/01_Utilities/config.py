@@ -63,7 +63,8 @@ GOLD_PATHS = {
     "customers": f"{MOUNT_POINTS['gold']}/customers",
     "invoice_fact": f"{MOUNT_POINTS['gold']}/invoice_fact",
     "invoice_line_items": f"{MOUNT_POINTS['gold']}/invoice_line_items",
-    "exchange_rates": f"{MOUNT_POINTS['gold']}/exchange_rates"
+    "exchange_rates": f"{MOUNT_POINTS['gold']}/exchange_rates",
+    "customer_segments": f"{MOUNT_POINTS['gold']}/customer_segments"
 
 }
 

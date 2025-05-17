@@ -150,6 +150,9 @@ invoice_line_items_schema = StructType([
     StructField("ProductID", IntegerType(), True),
     StructField("Category", StringType(), True),
     StructField("SubCategory", StringType(), True),
+    StructField("StoreID", IntegerType(), True),
+    StructField("Country", StringType(), True),
+    StructField("City", StringType(), True),
     StructField("Size", StringType(), True),
     StructField("Color", StringType(), True),
     StructField("UnitPrice", DecimalType(10, 4), True),
@@ -157,7 +160,9 @@ invoice_line_items_schema = StructType([
     StructField("Discount", DecimalType(10, 2), True),
     StructField("DiscountID", IntegerType(), True),
     StructField("SKU", StringType(), True),
+    StructField("Date", DateType(), True),
     StructField("TransactionType", StringType(), True),
+    StructField("LineTotal", DecimalType(10, 4), True),
     StructField("LineTotal", DecimalType(10, 4), True)
 ])
 
@@ -177,7 +182,8 @@ gold_customers_schema = StructType([
     StructField("IsParent", BooleanType(), True),
     StructField("TotalSpending", DecimalType(20, 4), True),
     StructField("NoOfInvoices", IntegerType(), True),
-    StructField("AverageSpending", DecimalType(14, 4), True)
+    StructField("AverageSpending", DecimalType(14, 4), True),
+    StructField("RFM_Segment", StringType(), True)
 ])
 
 gold_stores_schema = StructType([
@@ -190,12 +196,10 @@ gold_stores_schema = StructType([
     StructField("ZIPCode", StringType(), True),
     StructField("Latitude", DecimalType(10,6), True),
     StructField("Longitude", DecimalType(10,6), True),
-    # New analytical fields
-    StructField("TotalSales", DecimalType(10,2), True),
+    StructField("TotalSalesUSD", DecimalType(24,4), True),
     StructField("TotalTransactions", IntegerType(), True),
     StructField("TotalReturns", IntegerType(), True),
-    StructField("AverageMonthlyUSD", DecimalType(10,2), True),
-    StructField("ReturnRate", DecimalType(5,2), True),
-    StructField("MonthsOfOperation", DecimalType(5,1), True),
-    StructField("SalesPerEmployee", DecimalType(10,2), True)
+    StructField("AverageMonthlyUSD", DecimalType(10,4), True),
+    StructField("ReturnRate", DecimalType(10,2), True),
+    StructField("MonthsOfOperation", DecimalType(5,1), True)
 ])

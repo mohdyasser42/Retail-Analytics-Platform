@@ -167,10 +167,10 @@ invoice_fact = invoice_fact.groupBy("InvoiceID", "CustomerID", "Date", "Time", "
 # COMMAND ----------
 
 # Selecting Country and City Columns from Stores Data
-stores_df = stores_df.select("StoreID", "Country", "City").withColumnRenamed("Country", "StoreCountry").withColumnRenamed("City", "StoreCity")
+stores_df1 = stores_df.select("StoreID", "Country", "City").withColumnRenamed("Country", "StoreCountry").withColumnRenamed("City", "StoreCity")
 
 # Join with store data to add StoreCountry and StoreCity columns
-invoice_fact = invoice_fact.join(stores_df, on="StoreID", how="left")
+invoice_fact = invoice_fact.join(stores_df1, on="StoreID", how="left")
 
 # COMMAND ----------
 
@@ -225,23 +225,78 @@ display(invoice_fact.filter(invoice_fact.StoreCountry == 'China').limit(5))
 
 # COMMAND ----------
 
+# Extract Date and Time from Timestamp
+invoice_line_items = transactions_df.withColumn("Date", F.to_date("Timestamp")) \
+    .withColumn("Time", F.date_format("Timestamp", "HH:mm:ss")) \
+    .withColumn("FirstOfMonth", F.trunc("Timestamp", "month"))  # First day of month for exchange rate join
+
+# COMMAND ----------
+
+# Selecting Country and City Columns from Stores Data
+stores_df2 = stores_df.select("StoreID", "Country", "City")
+
 # Selecting Category and SubCategory columns from Product Data
 products_df = products_df.select("ProductID", "Category", "SubCategory")
 
 # COMMAND ----------
 
 # Create base invoice_line_items table
-invoice_line_items = transactions_df.withColumn("Date", F.to_date("Timestamp")) \
+invoice_line_items = invoice_line_items.withColumn("Date", F.to_date("Timestamp")) \
     .select(
     "InvoiceID", "CustomerID", "Line", "ProductID", "Size", "Color", 
-    "UnitPrice", "Quantity", "Discount", "SKU", "LineTotal", "Date",
-    "TransactionType"
+    "UnitPrice", "Quantity", "Discount","Date", "FirstOfMonth",
+    "StoreID", "SKU", "LineTotal", "TransactionType", "Currency"
 )
 
 # COMMAND ----------
 
 # Join with product info to get Category and SubCategory
 invoice_line_items = invoice_line_items.join(products_df, on="ProductID", how="left")
+
+# Join with store info to get Country and City
+invoice_line_items = invoice_line_items.join(stores_df2, on="StoreID", how="left")
+
+# COMMAND ----------
+
+invoice_line_items.cache().count()
+display(invoice_line_items.limit(5))
+
+# COMMAND ----------
+
+# Register tables as temporary views for SQL operations
+exchange_rates_df.createOrReplaceTempView("exchange_rates")
+invoice_line_items.createOrReplaceTempView("invoice_items_temp")
+
+# COMMAND ----------
+
+# Use SQL for the currency conversion logic
+invoice_items_with_usd = spark.sql("""
+    SELECT 
+        i.*,
+        CAST(
+            CASE 
+                WHEN i.Currency = 'USD' THEN i.LineTotal
+                ELSE i.LineTotal * COALESCE(e.ExchangeRate, 1.0)
+            END AS DECIMAL(10,4)
+        ) AS LineTotalUSD
+    FROM 
+        invoice_items_temp i
+    LEFT JOIN 
+        exchange_rates e ON i.FirstOfMonth = e.RateDate 
+                        AND i.Currency = e.BaseCurrency 
+                        AND e.TargetCurrency = 'USD'
+""")
+
+# COMMAND ----------
+
+invoice_line_items = invoice_items_with_usd.select("InvoiceID", "CustomerID", "Line", "ProductID", "Size", "Color", 
+    "UnitPrice", "Quantity", "Discount","Date", "FirstOfMonth", "StoreID", "SKU", "LineTotal", "TransactionType", "Currency", "LineTotalUSD", "Category", "SubCategory", "Country", "City")
+
+
+# COMMAND ----------
+
+invoice_line_items.cache().count()
+display(invoice_line_items.filter(invoice_line_items['Country'] == 'China').limit(5))
 
 # COMMAND ----------
 
@@ -301,6 +356,11 @@ invoice_line_items.createOrReplaceTempView("invoice_line_items_temp")
 # MAGIC     t.TransactionType,
 # MAGIC     t.Category,
 # MAGIC     t.SubCategory,
+# MAGIC     t.StoreID,
+# MAGIC     t.Currency,
+# MAGIC     t.Country,
+# MAGIC     t.City,
+# MAGIC     t.LineTotalUSD,
 # MAGIC     d.DiscountID
 # MAGIC FROM 
 # MAGIC     invoice_line_items_temp t
@@ -389,9 +449,10 @@ invoice_line_items_final = invoice_line_items_with_discount.withColumn("LineItem
 # Reorder columns with surrogate key first
 invoice_line_items = invoice_line_items_final.select(
     "LineItemID", "InvoiceID", "Line", "CustomerID", "ProductID",
-    "Category", "SubCategory", "Size", "Color", "UnitPrice", "Quantity", 
-    "Discount", "DiscountID", "SKU", "TransactionType", "LineTotal"
+    "Category", "SubCategory", "StoreID", "Country", "City", "Size", "Color", "UnitPrice", "Quantity", 
+    "Discount", "DiscountID", "SKU", "Date", "TransactionType", "LineTotal", "LineTotalUSD"
 )
+invoice_line_items.cache()
 invoice_line_items_count = invoice_line_items.count()
 
 # COMMAND ----------
