@@ -73,12 +73,14 @@ from pyspark.sql.types import DecimalType
 print(f"Loading Silver Stores Data...")
 tmp_stores_df = spark.read.format(file_format).load(silver_stores_path)
 stores_df = spark.createDataFrame(tmp_stores_df.rdd, stores_schema)
+stores_df.cache()
 print(f"Loaded {stores_df.count()} store records")
 
 # Load Gold layer invoice_fact data
 print(f"\nLoading Gold Invoice Fact Data...")
 tmp_invoice_fact_df = spark.read.format(file_format).load(gold_invoice_fact_path)
 invoice_fact_df = spark.createDataFrame(tmp_invoice_fact_df.rdd, invoice_fact_schema)
+invoice_fact_df.cache()
 print(f"Loaded {invoice_fact_df.count()} invoice records")
 
 # COMMAND ----------
@@ -122,13 +124,16 @@ invoice_fact_df.createOrReplaceTempView("invoice_fact")
 # MAGIC SELECT 
 # MAGIC     f.StoreID,
 # MAGIC     -- Total sales (USD) for sales transactions only
-# MAGIC     SUM(CASE WHEN f.TransactionType = 'Sale' THEN f.InvoiceTotalUSD ELSE 0 END) AS TotalSales,
+# MAGIC     SUM(CASE WHEN f.TransactionType = 'Sale' THEN f.InvoiceTotalUSD ELSE 0 END) AS TotalSalesUSD,
 # MAGIC     
 # MAGIC     -- Count of distinct sales invoices
 # MAGIC     COUNT(DISTINCT CASE WHEN f.TransactionType = 'Sale' THEN f.InvoiceID END) AS TotalTransactions,
 # MAGIC     
 # MAGIC     -- Count of distinct return invoices
 # MAGIC     COUNT(DISTINCT CASE WHEN f.TransactionType = 'Return' THEN f.InvoiceID END) AS TotalReturns,
+# MAGIC
+# MAGIC     -- Total returns (USD) for returns transactions only
+# MAGIC     SUM(CASE WHEN f.TransactionType = 'Return' THEN ABS(f.InvoiceTotalUSD) ELSE 0 END) AS TotalReturnsUSD,
 # MAGIC     
 # MAGIC     -- Min and Max dates to calculate operating period
 # MAGIC     MIN(f.Date) AS FirstTransactionDate,
@@ -148,7 +153,7 @@ invoice_fact_df.createOrReplaceTempView("invoice_fact")
 # MAGIC CREATE OR REPLACE TEMPORARY VIEW gold_stores AS
 # MAGIC SELECT 
 # MAGIC     s.*,
-# MAGIC     COALESCE(m.TotalSales, 0) AS TotalSales,
+# MAGIC     COALESCE(m.TotalSalesUSD, 0) AS TotalSalesUSD,
 # MAGIC     COALESCE(m.TotalTransactions, 0) AS TotalTransactions,
 # MAGIC     COALESCE(m.TotalReturns, 0) AS TotalReturns,
 # MAGIC     
@@ -156,14 +161,14 @@ invoice_fact_df.createOrReplaceTempView("invoice_fact")
 # MAGIC     -- If there are no months with transactions, default to 0
 # MAGIC     CASE 
 # MAGIC         WHEN COALESCE(m.MonthsWithTransactions, 0) > 0 
-# MAGIC         THEN CAST(COALESCE(m.TotalSales, 0) / m.MonthsWithTransactions AS DECIMAL(10,2))
+# MAGIC         THEN CAST(COALESCE(m.TotalSalesUSD, 0) / m.MonthsWithTransactions AS DECIMAL(10,4))
 # MAGIC         ELSE 0 
 # MAGIC     END AS AverageMonthlyUSD,
 # MAGIC     
-# MAGIC     -- Calculate return rate (returns / total transactions)
+# MAGIC     -- Calculate return rate (total returns USD / total sales USD) * 100
 # MAGIC     CASE 
 # MAGIC         WHEN COALESCE(m.TotalTransactions, 0) > 0 
-# MAGIC         THEN CAST(COALESCE(m.TotalReturns, 0) * 100.0 / m.TotalTransactions AS DECIMAL(5,2))
+# MAGIC         THEN CAST(COALESCE(m.TotalReturnsUSD, 0) * 100.0 / m.TotalSalesUSD AS DECIMAL(10,2))
 # MAGIC         ELSE 0 
 # MAGIC     END AS ReturnRate,
 # MAGIC     
@@ -174,14 +179,7 @@ invoice_fact_df.createOrReplaceTempView("invoice_fact")
 # MAGIC             THEN MONTHS_BETWEEN(m.LastTransactionDate, m.FirstTransactionDate) + 1
 # MAGIC             ELSE 0 
 # MAGIC         END AS DECIMAL(5,1)
-# MAGIC     ) AS MonthsOfOperation,
-# MAGIC     
-# MAGIC     -- Calculate sales per employee
-# MAGIC     CASE 
-# MAGIC         WHEN s.NumberOfEmployees > 0 
-# MAGIC         THEN CAST(COALESCE(m.TotalSales, 0) / s.NumberOfEmployees AS DECIMAL(10,2))
-# MAGIC         ELSE 0 
-# MAGIC     END AS SalesPerEmployee
+# MAGIC     ) AS MonthsOfOperation
 # MAGIC FROM 
 # MAGIC     stores s
 # MAGIC LEFT JOIN 
@@ -193,6 +191,7 @@ invoice_fact_df.createOrReplaceTempView("invoice_fact")
 gold_stores_df = spark.sql("""
 SELECT * FROM gold_stores
 """)
+gold_stores_df.cache()
 
 # COMMAND ----------
 
@@ -201,10 +200,6 @@ gold_stores_count = gold_stores_df.count()
 
 # Display sample enriched store data
 print("Enriched Store Data Sample:")
-display(gold_stores_df.limit(5))
-
-# COMMAND ----------
-
 display(gold_stores_df)
 
 # COMMAND ----------
@@ -219,11 +214,10 @@ display(gold_stores_df)
 # MAGIC SELECT 
 # MAGIC     Country,
 # MAGIC     COUNT(*) AS StoreCount,
-# MAGIC     ROUND(SUM(TotalSales), 2) AS CountryTotalSales,
-# MAGIC     ROUND(AVG(TotalSales), 2) AS AvgStoreRevenue,
+# MAGIC     ROUND(SUM(TotalSalesUSD), 2) AS CountryTotalSales,
+# MAGIC     ROUND(AVG(TotalSalesUSD), 2) AS AvgStoreRevenue,
 # MAGIC     ROUND(AVG(AverageMonthlyUSD), 2) AS AvgMonthlyRevenue,
-# MAGIC     ROUND(AVG(ReturnRate), 2) AS AvgReturnRate,
-# MAGIC     ROUND(AVG(SalesPerEmployee), 2) AS AvgSalesPerEmployee
+# MAGIC     ROUND(AVG(ReturnRate), 2) AS AvgReturnRate
 # MAGIC FROM 
 # MAGIC     gold_stores
 # MAGIC GROUP BY 
@@ -240,16 +234,15 @@ display(gold_stores_df)
 # MAGIC     StoreName,
 # MAGIC     City,
 # MAGIC     Country,
-# MAGIC     TotalSales,
+# MAGIC     TotalSalesUSD,
 # MAGIC     AverageMonthlyUSD,
 # MAGIC     TotalTransactions,
 # MAGIC     NumberOfEmployees,
-# MAGIC     SalesPerEmployee,
 # MAGIC     ReturnRate
 # MAGIC FROM 
 # MAGIC     gold_stores
 # MAGIC ORDER BY 
-# MAGIC     TotalSales DESC
+# MAGIC     TotalSalesUSD DESC
 # MAGIC LIMIT 10
 
 # COMMAND ----------
@@ -306,7 +299,7 @@ gold_stores_verify_df.printSchema()
 
 # Display a summary of store performance metrics
 print("Summary Statistics for Store Performance Metrics:")
-gold_stores_verify_df.select("TotalSales", "AverageMonthlyUSD", "TotalTransactions", "ReturnRate", "SalesPerEmployee").summary().show()
+gold_stores_verify_df.select("TotalSalesUSD", "AverageMonthlyUSD", "TotalTransactions", "ReturnRate").summary().show()
 
 # COMMAND ----------
 
@@ -322,13 +315,12 @@ gold_stores_verify_df.createOrReplaceTempView("gold_stores_final")
 # MAGIC     StoreName,
 # MAGIC     City, 
 # MAGIC     Country,
-# MAGIC     TotalSales,
+# MAGIC     TotalSalesUSD,
 # MAGIC     AverageMonthlyUSD,
 # MAGIC     TotalTransactions,
 # MAGIC     ReturnRate,
-# MAGIC     RANK() OVER (ORDER BY TotalSales DESC) AS SalesRank,
+# MAGIC     RANK() OVER (ORDER BY TotalSalesUSD DESC) AS SalesRank,
 # MAGIC     RANK() OVER (ORDER BY AverageMonthlyUSD DESC) AS MonthlyRank,
-# MAGIC     RANK() OVER (ORDER BY SalesPerEmployee DESC) AS EfficiencyRank,
 # MAGIC     RANK() OVER (ORDER BY ReturnRate ASC) AS QualityRank
 # MAGIC FROM 
 # MAGIC     gold_stores_final
