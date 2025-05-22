@@ -45,9 +45,6 @@ with tab2:
     with st.spinner("Loading Customers data..."):
         customers_df = read_parquet_from_adls(container_name, customer_file_path)
     
-    with st.spinner("Loading Transactions data..."):
-        invoice_line_df = read_parquet_from_adls(container_name, transactions_file_path)
-    
     if customers_df is not None:  
 
         # Store Overview 
@@ -65,7 +62,6 @@ with tab2:
                     # Display the Table
                     st.dataframe(qry_result, use_container_width=True)
             
-    if invoice_line_df is not None:
-        st.write("Working")
+    
     else:
         st.error("Unable to load sales data. Please check your connection to Azure Data Lake.")
