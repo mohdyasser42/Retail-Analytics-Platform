@@ -13,53 +13,47 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 
 # Streamlit app layout
 st.title("Global Fashion Retails")
+st.header("Store Performance Analysis")
 
-# Sidebar for navigation
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Select a Page", ["Dashboard", "Store Overview"])
+# Load sales data from ADLS Gen2
+container_name = "global-fashion-retails-data"
+file_path = "gold/stores/part-00000-f608fe67-04e6-4700-a0d1-19290aedcebf.c000.snappy.parquet"  # Using the gold layer for analytics
+
+with st.spinner("Loading Stores data..."):
+    store_df = read_parquet_from_adls(container_name, file_path)
+    
+if store_df is not None:
+
+    # Changing the Column Names and Datatype Suitable for Streamlit in-built functions
+    store_df = store_df.rename(columns={'Latitude': 'latitude', 'Longitude': 'longitude'})
+    store_df['latitude'] = store_df['latitude'].astype(float)
+    store_df['longitude'] = store_df['longitude'].astype(float)
+        
+
+# Create tabs for different views
+tab1, tab2, tab3, tab4 = st.tabs(["Dashboard", "Overview", "Store Profile", "Geographic Locations"])
 
 # Main content area
-if page == "Dashboard":
-
-    st.header("Store Performance Analysis")
+with tab1:
+    st.subheader("Analysis Dashboard")
+    
 
     # Get the embed code from Power BI
     powerbi_embed_code = """
-    <div style="display: flex; justify-content: center; width: 100%;">
-        <iframe title="Stores" width="1024" height="1060" src="https://app.powerbi.com/view?r=eyJrIjoiMzE1MWUwMjUtZjcxOC00ODZkLTg1MGItYTNiZDhkZWZiY2ViIiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe> 
+    <div style="display: flex; justify-content: center; width: 100%; height: 100%">
+        <iframe title="Stores" width="1024" height="1500" src="https://app.powerbi.com/view?r=eyJrIjoiZDc5ZWUyZmEtZDI1NC00YzU3LWI5OTgtZTU0MzVjMzE1M2U1IiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe>
     </div>
     """
 
     # Display using components
-    st.components.v1.html(powerbi_embed_code, width=None, height=1000)
+    st.components.v1.html(powerbi_embed_code, width=None, height=1400)
 
    
-elif page == "Store Overview":
-    
-    st.header("Store Overview")
-    
-    # Load sales data from ADLS Gen2
-    container_name = "global-fashion-retails-data"
-    file_path = "gold/stores/part-00000-109416df-e65b-4273-aca5-c0ec4a3ca534.c000.snappy.parquet"  # Using the gold layer for analytics
-    
-    with st.spinner("Loading sales data..."):
-        store_df = read_parquet_from_adls(container_name, file_path)
+with tab2:
+    st.subheader("Store Overview")        
     
     if store_df is not None:
-
-        # Changing the Column Names and Datatype Suitable for Streamlit in-built functions
-        store_df = store_df.rename(columns={'Latitude': 'latitude', 'Longitude': 'longitude'})
-        store_df['latitude'] = store_df['latitude'].astype(float)
-        store_df['longitude'] = store_df['longitude'].astype(float)
-        
-        # Create tabs for different views
-        tab1, tab2, tab3 = st.tabs(["Overview", "Store Details", "Geographic Locations"])
-
-        # Store Overview Tab
-        with tab1:
-            st.subheader("Store Overview")
-            
-            # Display summary statistics
+        # Display summary statistics
             col1, col2, col3 = st.columns(3)
             
             with col1:
@@ -80,55 +74,60 @@ elif page == "Store Overview":
                 AvgReturnRate=('ReturnRate', 'mean')
             )
 
-            # # Round the numeric columns to 2 decimal places
-            # country_metrics['CountryTotalSales'] = country_metrics['CountryTotalSales'].round(2)
-            # country_metrics['AvgStoreRevenue'] = country_metrics['AvgStoreRevenue'].round(2)
-            # country_metrics['AvgMonthlyRevenue'] = country_metrics['AvgMonthlyRevenue'].round(2)
-            # country_metrics['AvgReturnRate'] = country_metrics['AvgReturnRate'].round(2)
-
             # Sort by CountryTotalSales in descending order
             country_metrics = country_metrics.sort_values('CountryTotalSales', ascending=False).reset_index()
 
             # Display the Analysis
             st.subheader("Stores Table")
             st.dataframe(country_metrics, hide_index=True)
+    else:
+        st.error("Unable to load sales data. Please check your connection to Azure Data Lake.")
 
-        # Store Details Tab
-        with tab2:
-            st.subheader("Store Profile")
 
-            ft1, ft2 = st.columns(2)
-            
-            with ft1:
-                # Add filter for country
-                country_filter = st.selectbox(
-                    "Select A Country",
-                    sorted(store_df["Country"].unique().tolist())
-                )
-            
+    
+# Store Details Tab
+with tab3:
+    st.subheader("Store Profile")
+
+    if store_df is not None:
+
+        # Columns for Filters
+        ft1, ft2 = st.columns(2)
+                
+        with ft1:
+            # Add filter for country
+            country_filter = st.selectbox(
+                "Select A Country",
+                sorted(store_df["Country"].unique().tolist())
+            )
+
             # Filter the data based on selection
             if country_filter:
                 filtered_df = store_df[store_df["Country"] == country_filter]
-                with ft2:
-                    store_filter = st.selectbox(
-                        "Select A Store",
-                        sorted(filtered_df["StoreName"].unique().tolist())
-                    )
 
-            if store_filter:
-                final_df = filtered_df[filtered_df["StoreName"] == store_filter]
+        with ft2:
+            store_filter = st.selectbox(
+                "Select A Store",
+                sorted(filtered_df["StoreName"].unique().tolist())
+            )
 
-                st.write("")
-                st.write("")
-                pcol1, pcol2, pcol3 = st.columns([0.5,3,0.5], border=True)
+        if store_filter:
+            final_df = filtered_df[filtered_df["StoreName"] == store_filter]
 
-                with pcol2:
+        st.write("")
+        st.write("")
+        
+        if final_df is not None:
+            pcol1, pcol2, pcol3 = st.columns([0.5,3,0.5], border=False)
+
+            with pcol2:
+                with st.container(border=True):
                     st.write("")
                     st.write("")
 
                     logo = """
                         <div style="display: flex; justify-content: center; width: 100%;">
-                            <iframe src="https://lottie.host/embed/3163e453-3217-4f49-b752-b48ebd378e04/2e35UCkOoW.lottie"></iframe>
+                            <iframe src="https://lottie.host/embed/3163e453-3217-4f49-b752-b48ebd378e04/2e35UCkOoW.lottie" style="border: None;"></iframe>
                         </div>
                     """
                     st.components.v1.html(logo)
@@ -192,37 +191,37 @@ elif page == "Store Overview":
 
                     r3col4.markdown(f"<h5 style=''>Rate Of Return</h5>", unsafe_allow_html=True)
                     r3col4.markdown(f"<p style=''>{returnrate}</p>", unsafe_allow_html=True)
-
-
-        # Geographic Analysis Tab
-        with tab3:
-            st.subheader("Geographic Distribution")
-            
-            # Prepare data for map
-            map_data = store_df[["StoreName", "City", "Country", "NumberOfEmployees", "latitude", "longitude"]]
-            
-            # Display interactive map
-            st.map(map_data)
-            
-            # Add a note about store locations
-            st.info("""
-            The Map Shows the Geographic Distribution of all Global Fashion Retail Stores Across Globe.
-            """)
-            
-            # Option to download store location data
-            csv = map_data.to_csv(index=False)
-            st.download_button(
-                label="Download Store Locations",
-                data=csv,
-                file_name="store_locations.csv",
-                mime="text/csv",
-            ) 
-                    
-
-
-            
-        
     else:
         st.error("Unable to load sales data. Please check your connection to Azure Data Lake.")
 
-# Additional pages would follow a similar pattern...
+            
+
+# Geographic Analysis Tab
+with tab4:
+    st.subheader("Geographic Distribution")
+
+    if store_df is not None:
+    
+        # Prepare data for map
+        map_data = store_df[["StoreName", "City", "Country", "NumberOfEmployees", "latitude", "longitude"]]
+        
+        # Display interactive map
+        st.map(map_data)
+        
+        # Add a note about store locations
+        st.info("""
+        The Map Shows the Geographic Distribution of all Global Fashion Retail Stores Across Globe.
+        """)
+        
+        # Option to download store location data
+        csv = map_data.to_csv(index=False)
+        st.download_button(
+            label="Download Store Locations",
+            data=csv,
+            file_name="store_locations.csv",
+            mime="text/csv",
+        ) 
+    else:
+        st.error("Unable to load sales data. Please check your connection to Azure Data Lake.") 
+
+

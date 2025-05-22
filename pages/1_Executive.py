@@ -19,10 +19,10 @@ with executive_dashboard:
 
     # Get the embed code from Power BI
     powerbi_embed_code = """
-    <div style="display: flex; justify-content: center; width: 100%;">
-        <iframe title="Executive" width="1024" height="1060" src="https://app.powerbi.com/view?r=eyJrIjoiZTcwODY0MzEtNzc5NC00ODc3LThkZWMtMWExMzE0NDkxZDRlIiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9" frameborder="0" allowFullScreen="true"></iframe> 
+    <div style="display: flex; justify-content: center; width: 100%; height: 100%">
+        <iframe title="Executive" width="1024" height="1500" src="https://app.powerbi.com/view?r=eyJrIjoiNTU5OGU3MzAtNjFjOS00NGQxLTk0NGYtZjViYjhhZGRhOTIwIiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe>
     </div>
     """
 
     # Display using components
-    st.components.v1.html(powerbi_embed_code, width=None, height=1000)
+    st.components.v1.html(powerbi_embed_code, width=None, height=1400)
