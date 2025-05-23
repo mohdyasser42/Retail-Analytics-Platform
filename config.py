@@ -10,9 +10,9 @@ import io
 @st.cache_resource
 def get_credentials():
     # Method 1: Service Principal authentication (most secure)
-    tenant_id = "02045b3b-9790-4008-b83c-d155576e6c7e"
-    client_id = "1c29e7f1-aef9-4c3d-a4df-fd3f11c8bf3a"
-    client_secret = "YQ28Q~lZTFse-aQHPOqkeoKEcb7f4v5kqJ8gvcmb"
+    tenant_id = st.secrets["azure_credentials"]["tenant_id"]
+    client_id = st.secrets["azure_credentials"]["client_id"]
+    client_secret = st.secrets["azure_credentials"]["client_secret"]
     
     credential = ClientSecretCredential(
         tenant_id=tenant_id,
@@ -25,7 +25,7 @@ def get_credentials():
 @st.cache_resource
 def get_datalake_service_client():
     credential = get_credentials()
-    storage_account_name = "gfrdatastorage"
+    storage_account_name = st.secrets["azure_storage"]["account_name"]
     service_client = DataLakeServiceClient(
         account_url=f"https://{storage_account_name}.dfs.core.windows.net/",
         credential=credential

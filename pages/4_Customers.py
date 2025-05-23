@@ -45,23 +45,31 @@ with tab2:
     with st.spinner("Loading Customers data..."):
         customers_df = read_parquet_from_adls(container_name, customer_file_path)
     
-    if customers_df is not None:  
+    # with st.spinner("Loading Transactions data..."):
+    #     invoice_line_df = read_parquet_from_adls(container_name, transactions_file_path)
+
+    if customers_df is None:
+        st.error("Unable to load Customers data. Please check your connection to Azure Data Lake.")
+    elif customers_df is not None:
 
         # Store Overview 
-        if customers_df is not None:
-            form = st.form(key='id_query', clear_on_submit=True)
-            id_qry = form.number_input("Enter Customer ID:", value=None, step=1 )
-            submit = form.form_submit_button('Search')
+        form = st.form(key='id_query', clear_on_submit=True)
+        id_qry = form.number_input("Enter Customer ID:", value=None, step=1 )
+        submit = form.form_submit_button('Search')
+        
+        if submit:
+            if not id_qry:  
+                st.error("Enter a valid ID")
+            else:
+                st.write(f"Query: {id_qry}.")
+                qry_result = customers_df[customers_df['CustomerID'] == id_qry]
+                # Display the Table
+                st.dataframe(qry_result, use_container_width=True)
+        
+        if qry_result is not None:
+            pcol1, pcol2, pcol3 = st.columns([0.5,3,0.5], border=True)
+        
+
             
-            if submit:
-                if not id_qry:  
-                    st.error("Enter a valid ID")
-                else:
-                    st.write(f"Query: {id_qry}.")
-                    qry_result = customers_df[customers_df['CustomerID'] == id_qry]
-                    # Display the Table
-                    st.dataframe(qry_result, use_container_width=True)
             
-    
-    else:
-        st.error("Unable to load sales data. Please check your connection to Azure Data Lake.")
+        
