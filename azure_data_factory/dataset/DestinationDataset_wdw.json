@@ -1,0 +1,167 @@
+{
+	"name": "DestinationDataset_wdw",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_GOLD_DATABASE",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "LineItemID",
+				"type": "int",
+				"precision": 10,
+				"scale": 0
+			},
+			{
+				"name": "InvoiceID",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			},
+			{
+				"name": "Line",
+				"type": "int",
+				"precision": 10,
+				"scale": 0
+			},
+			{
+				"name": "CustomerID",
+				"type": "int",
+				"precision": 10,
+				"scale": 0
+			},
+			{
+				"name": "ProductID",
+				"type": "int",
+				"precision": 10,
+				"scale": 0
+			},
+			{
+				"name": "Category",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			},
+			{
+				"name": "ContributionMarginPercentage",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "TransactionType",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			},
+			{
+				"name": "LineTotal",
+				"type": "smallmoney",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "LineTotalUSD",
+				"type": "smallmoney",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "ProductionCost",
+				"type": "smallmoney",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "TotalProductionCost",
+				"type": "smallmoney",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "ContributionMargin",
+				"type": "smallmoney",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "UnitPrice",
+				"type": "smallmoney",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "Quantity",
+				"type": "int",
+				"precision": 10,
+				"scale": 0
+			},
+			{
+				"name": "Discount",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "DiscountID",
+				"type": "int",
+				"precision": 10,
+				"scale": 0
+			},
+			{
+				"name": "SKU",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			},
+			{
+				"name": "Date",
+				"type": "date",
+				"precision": 10,
+				"scale": 0
+			},
+			{
+				"name": "SubCategory",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			},
+			{
+				"name": "StoreID",
+				"type": "int",
+				"precision": 10,
+				"scale": 0
+			},
+			{
+				"name": "Country",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			},
+			{
+				"name": "City",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			},
+			{
+				"name": "Size",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			},
+			{
+				"name": "Color",
+				"type": "nvarchar",
+				"precision": 0,
+				"scale": 0
+			}
+		],
+		"typeProperties": {
+			"schema": "GlobalFashion",
+			"table": "InvoiceLineItems"
+		}
+	}
+}
