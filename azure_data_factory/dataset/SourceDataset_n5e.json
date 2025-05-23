@@ -1,0 +1,94 @@
+{
+	"name": "SourceDataset_n5e",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_ADLS_Connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "part-00000-2bbf662b-cab3-4bbd-b4fc-cbbe0da81410.c000.snappy.parquet",
+				"folderPath": "gold/customers",
+				"fileSystem": "global-fashion-retails-data"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "CustomerID",
+				"type": "INT_32"
+			},
+			{
+				"name": "Name",
+				"type": "UTF8"
+			},
+			{
+				"name": "Email",
+				"type": "UTF8"
+			},
+			{
+				"name": "Telephone",
+				"type": "UTF8"
+			},
+			{
+				"name": "City",
+				"type": "UTF8"
+			},
+			{
+				"name": "Country",
+				"type": "UTF8"
+			},
+			{
+				"name": "Gender",
+				"type": "UTF8"
+			},
+			{
+				"name": "DateOfBirth",
+				"type": "DATE"
+			},
+			{
+				"name": "JobTitle",
+				"type": "UTF8"
+			},
+			{
+				"name": "Age",
+				"type": "INT_64"
+			},
+			{
+				"name": "AgeGroup",
+				"type": "UTF8"
+			},
+			{
+				"name": "IsParent",
+				"type": "BOOLEAN"
+			},
+			{
+				"name": "TotalSpending",
+				"type": "DECIMAL",
+				"precision": 20,
+				"scale": 4
+			},
+			{
+				"name": "NoOfInvoices",
+				"type": "INT_64"
+			},
+			{
+				"name": "AverageSpending",
+				"type": "DECIMAL",
+				"precision": 14,
+				"scale": 4
+			},
+			{
+				"name": "RFM_Segment",
+				"type": "UTF8"
+			},
+			{
+				"name": "Recency",
+				"type": "INT_32"
+			}
+		]
+	}
+}

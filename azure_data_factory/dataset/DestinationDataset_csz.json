@@ -1,0 +1,68 @@
+{
+	"name": "DestinationDataset_csz",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_GOLD_DATABASE",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ProductID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Category",
+				"type": "nvarchar"
+			},
+			{
+				"name": "SubCategory",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DescriptionPT",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DescriptionDE",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DescriptionFR",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DescriptionES",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DescriptionEN",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DescriptionZH",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Color",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Sizes",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ProductionCost",
+				"type": "smallmoney",
+				"precision": 10,
+				"scale": 4
+			}
+		],
+		"typeProperties": {
+			"schema": "GlobalFashion",
+			"table": "Products"
+		}
+	}
+}

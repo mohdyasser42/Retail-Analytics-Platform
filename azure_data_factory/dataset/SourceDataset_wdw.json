@@ -1,0 +1,138 @@
+{
+	"name": "SourceDataset_wdw",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_ADLS_Connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "part-00000-027b79af-fe50-48f8-b3f7-4c7e4cdb64fd.c000.snappy.parquet",
+				"folderPath": "gold/invoice_line_items",
+				"fileSystem": "global-fashion-retails-data"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "LineItemID",
+				"type": "INT_32"
+			},
+			{
+				"name": "InvoiceID",
+				"type": "UTF8"
+			},
+			{
+				"name": "Line",
+				"type": "INT_32"
+			},
+			{
+				"name": "CustomerID",
+				"type": "INT_32"
+			},
+			{
+				"name": "ProductID",
+				"type": "INT_32"
+			},
+			{
+				"name": "Category",
+				"type": "UTF8"
+			},
+			{
+				"name": "SubCategory",
+				"type": "UTF8"
+			},
+			{
+				"name": "StoreID",
+				"type": "INT_32"
+			},
+			{
+				"name": "Country",
+				"type": "UTF8"
+			},
+			{
+				"name": "City",
+				"type": "UTF8"
+			},
+			{
+				"name": "Size",
+				"type": "UTF8"
+			},
+			{
+				"name": "Color",
+				"type": "UTF8"
+			},
+			{
+				"name": "UnitPrice",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "Quantity",
+				"type": "INT_32"
+			},
+			{
+				"name": "Discount",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "DiscountID",
+				"type": "INT_32"
+			},
+			{
+				"name": "SKU",
+				"type": "UTF8"
+			},
+			{
+				"name": "Date",
+				"type": "DATE"
+			},
+			{
+				"name": "TransactionType",
+				"type": "UTF8"
+			},
+			{
+				"name": "LineTotal",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "LineTotalUSD",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "ProductionCost",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "TotalProductionCost",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "ContributionMargin",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "ContributionMarginPercentage",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 2
+			}
+		]
+	}
+}

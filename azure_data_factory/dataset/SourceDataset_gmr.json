@@ -1,0 +1,86 @@
+{
+	"name": "SourceDataset_gmr",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_ADLS_Connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "part-00000-a8e93720-5c7b-4f09-a1f9-df31e0a6f1f2.c000.snappy.parquet",
+				"folderPath": "gold/invoice_fact",
+				"fileSystem": "global-fashion-retails-data"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "InvoiceID",
+				"type": "UTF8"
+			},
+			{
+				"name": "CustomerID",
+				"type": "INT_32"
+			},
+			{
+				"name": "Date",
+				"type": "DATE"
+			},
+			{
+				"name": "Time",
+				"type": "UTF8"
+			},
+			{
+				"name": "StoreID",
+				"type": "INT_32"
+			},
+			{
+				"name": "StoreCountry",
+				"type": "UTF8"
+			},
+			{
+				"name": "StoreCity",
+				"type": "UTF8"
+			},
+			{
+				"name": "EmployeeID",
+				"type": "INT_32"
+			},
+			{
+				"name": "TotalQuantity",
+				"type": "INT_64"
+			},
+			{
+				"name": "Currency",
+				"type": "UTF8"
+			},
+			{
+				"name": "CurrencySymbol",
+				"type": "UTF8"
+			},
+			{
+				"name": "TransactionType",
+				"type": "UTF8"
+			},
+			{
+				"name": "PaymentMethod",
+				"type": "UTF8"
+			},
+			{
+				"name": "InvoiceTotal",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			},
+			{
+				"name": "InvoiceTotalUSD",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			}
+		]
+	}
+}

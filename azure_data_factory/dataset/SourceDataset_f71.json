@@ -1,0 +1,52 @@
+{
+	"name": "SourceDataset_f71",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_ADLS_Connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "part-00000-1efb3e1b-7e89-438c-a747-b388592e35d5.c000.snappy.parquet",
+				"folderPath": "gold/discounts",
+				"fileSystem": "global-fashion-retails-data"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "StartDate",
+				"type": "DATE"
+			},
+			{
+				"name": "EndDate",
+				"type": "DATE"
+			},
+			{
+				"name": "DiscountID",
+				"type": "INT_32"
+			},
+			{
+				"name": "Discount",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "Description",
+				"type": "UTF8"
+			},
+			{
+				"name": "Category",
+				"type": "UTF8"
+			},
+			{
+				"name": "SubCategory",
+				"type": "UTF8"
+			}
+		]
+	}
+}

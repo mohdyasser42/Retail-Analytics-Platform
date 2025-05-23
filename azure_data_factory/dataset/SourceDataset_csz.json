@@ -1,0 +1,72 @@
+{
+	"name": "SourceDataset_csz",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_ADLS_Connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "part-00000-a3f8d7bf-9d2f-40a4-9d97-c71fba7f7e73.c000.snappy.parquet",
+				"folderPath": "gold/products",
+				"fileSystem": "global-fashion-retails-data"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "ProductID",
+				"type": "INT_32"
+			},
+			{
+				"name": "Category",
+				"type": "UTF8"
+			},
+			{
+				"name": "SubCategory",
+				"type": "UTF8"
+			},
+			{
+				"name": "DescriptionPT",
+				"type": "UTF8"
+			},
+			{
+				"name": "DescriptionDE",
+				"type": "UTF8"
+			},
+			{
+				"name": "DescriptionFR",
+				"type": "UTF8"
+			},
+			{
+				"name": "DescriptionES",
+				"type": "UTF8"
+			},
+			{
+				"name": "DescriptionEN",
+				"type": "UTF8"
+			},
+			{
+				"name": "DescriptionZH",
+				"type": "UTF8"
+			},
+			{
+				"name": "Color",
+				"type": "UTF8"
+			},
+			{
+				"name": "Sizes",
+				"type": "UTF8"
+			},
+			{
+				"name": "ProductionCost",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 4
+			}
+		]
+	}
+}
