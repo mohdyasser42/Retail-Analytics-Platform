@@ -19,7 +19,6 @@ tab1, tab2 = st.tabs(["Dashboard", "Customers Overview"])
 
 # Main content area
 with tab1:
-
     st.subheader("Customer Analysis Dashboard")
 
     # Get the embed code from Power BI
@@ -47,6 +46,8 @@ with tab2:
     
     # with st.spinner("Loading Transactions data..."):
     #     invoice_line_df = read_parquet_from_adls(container_name, transactions_file_path)
+
+    st.write("Streamlit secrets working!!")
 
     if customers_df is None:
         st.error("Unable to load Customers data. Please check your connection to Azure Data Lake.")
