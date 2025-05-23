@@ -16,8 +16,8 @@ st.title("Global Fashion Retails")
 st.header("Store Performance Analysis")
 
 # Load sales data from ADLS Gen2
-container_name = "global-fashion-retails-data"
-file_path = "gold/stores/part-00000-f608fe67-04e6-4700-a0d1-19290aedcebf.c000.snappy.parquet"  # Using the gold layer for analytics
+container_name = st.secrets["azure_storage"]["container_name"]
+file_path = st.secrets["azure_storage"]["stores_file_path"]
 
 with st.spinner("Loading Stores data..."):
     store_df = read_parquet_from_adls(container_name, file_path)

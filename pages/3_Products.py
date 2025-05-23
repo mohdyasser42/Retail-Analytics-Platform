@@ -1,5 +1,7 @@
 import streamlit as st 
 import pandas as pd
+import pyodbc
+import pandas.io.sql as psql
 from config import read_parquet_from_adls
 import io
 
@@ -41,8 +43,8 @@ with tab2:
     st.subheader("Products Overview")
     
     # Load sales data from ADLS Gen2
-    container_name = "global-fashion-retails-data"
-    file_path = "gold/products/part-00000-a3f8d7bf-9d2f-40a4-9d97-c71fba7f7e73.c000.snappy.parquet"  # Using the gold layer for analytics
+    container_name = st.secrets["azure_storage"]["container_name"]
+    file_path = st.secrets["azure_storage"]["products_file_path"]
     
     with st.spinner("Loading Products data..."):
         products_df = read_parquet_from_adls(container_name, file_path)

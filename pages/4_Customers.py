@@ -1,6 +1,6 @@
 import streamlit as st 
 import pandas as pd
-from config import read_parquet_from_adls
+from config import fetch_customers_data, fetch_invoice_line_items_data
 import io
 
 # Configuration - store these securely in Streamlit secrets or environment variables
@@ -37,17 +37,16 @@ with tab2:
     st.subheader("Customers Overview")
     
     # Load sales data from ADLS Gen2
-    container_name = "global-fashion-retails-data"
-    customer_file_path = "gold/customers/part-00000-2bbf662b-cab3-4bbd-b4fc-cbbe0da81410.c000.snappy.parquet"
-    transactions_file_path = "gold/invoice_line_items/part-00000-027b79af-fe50-48f8-b3f7-4c7e4cdb64fd.c000.snappy.parquet"
+    container_name = st.secrets["azure_storage"]["container_name"]
+    customer_file_path = st.secrets["azure_storage"]["customer_filepath"]
+    transactions_file_path = st.secrets["azure_storage"]["transactions_filepath"]
     
     with st.spinner("Loading Customers data..."):
-        customers_df = read_parquet_from_adls(container_name, customer_file_path)
+        customers_df = fetch_customers_data()
     
-    # with st.spinner("Loading Transactions data..."):
-    #     invoice_line_df = read_parquet_from_adls(container_name, transactions_file_path)
+    with st.spinner("Loading Transactions data..."):
+        invoice_line_df = fetch_invoice_line_items_data()
 
-    st.write("Streamlit secrets working!!")
 
     if customers_df is None:
         st.error("Unable to load Customers data. Please check your connection to Azure Data Lake.")
@@ -57,6 +56,7 @@ with tab2:
         form = st.form(key='id_query', clear_on_submit=True)
         id_qry = form.number_input("Enter Customer ID:", value=None, step=1 )
         submit = form.form_submit_button('Search')
+        qry_result = None
         
         if submit:
             if not id_qry:  
@@ -69,6 +69,9 @@ with tab2:
         
         if qry_result is not None:
             pcol1, pcol2, pcol3 = st.columns([0.5,3,0.5], border=True)
+
+            with pcol2:
+                st.write("we got resultss!!!")
         
 
             

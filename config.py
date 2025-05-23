@@ -3,6 +3,8 @@ import pandas as pd
 from azure.storage.filedatalake import DataLakeServiceClient
 from azure.identity import ClientSecretCredential
 import pyarrow.parquet as pq
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import URL
 import io
 
 
@@ -82,3 +84,47 @@ def read_parquet_from_adls(container_name, file_path):
     except Exception as e:
         st.error(f"Error reading Parquet file from ADLS: {e}")
         return None
+    
+
+# Database Connection
+@st.cache_resource  # Cache the engine, not the connection string
+def get_database_engine():
+    connection_url = URL.create(
+        "mssql+pyodbc",
+        username=st.secrets["sql_connection"]["USERNAME"],
+        password=st.secrets["sql_connection"]["PASSWORD"],
+        host=st.secrets["sql_connection"]["SERVER"],
+        database=st.secrets["sql_connection"]["DATABASE"],
+        query={
+            "driver": "ODBC Driver 17 for SQL Server",
+            "Encrypt": "yes",
+            "TrustServerCertificate": "yes",
+            "Connection Timeout": "30"
+        }
+    )
+    
+    return create_engine(
+        connection_url,
+        pool_size=5,          # Connection pooling
+        max_overflow=10,      # Extra connections if needed
+        pool_timeout=30,
+        pool_recycle=3600     # Refresh connections hourly
+    )
+
+@st.cache_data(ttl=86400)
+def fetch_customers_data():  
+    engine = get_database_engine()
+    query = "SELECT * FROM [GlobalFashion].[Customers]"
+    return pd.read_sql(query, engine)
+
+@st.cache_data(ttl=86400)
+def fetch_invoice_fact_data():  
+    engine = get_database_engine()
+    query = "SELECT * FROM [GlobalFashion].[InvoiceFact]"
+    return pd.read_sql(query, engine)
+
+@st.cache_data(ttl=86400)
+def fetch_invoice_line_items_data():  
+    engine = get_database_engine()
+    query = "SELECT * FROM [GlobalFashion].[InvoiceLineItems]"
+    return pd.read_sql(query, engine)
