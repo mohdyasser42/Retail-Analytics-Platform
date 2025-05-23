@@ -1,0 +1,90 @@
+{
+	"name": "SourceDataset_cpx",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_ADLS_Connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "part-00000-f608fe67-04e6-4700-a0d1-19290aedcebf.c000.snappy.parquet",
+				"folderPath": "gold/stores",
+				"fileSystem": "global-fashion-retails-data"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "StoreID",
+				"type": "INT_32"
+			},
+			{
+				"name": "Country",
+				"type": "UTF8"
+			},
+			{
+				"name": "City",
+				"type": "UTF8"
+			},
+			{
+				"name": "StoreName",
+				"type": "UTF8"
+			},
+			{
+				"name": "NumberOfEmployees",
+				"type": "INT_32"
+			},
+			{
+				"name": "ZIPCode",
+				"type": "UTF8"
+			},
+			{
+				"name": "Latitude",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 6
+			},
+			{
+				"name": "Longitude",
+				"type": "DECIMAL",
+				"precision": 10,
+				"scale": 6
+			},
+			{
+				"name": "TotalSalesUSD",
+				"type": "DECIMAL",
+				"precision": 24,
+				"scale": 4
+			},
+			{
+				"name": "TotalTransactions",
+				"type": "INT_64"
+			},
+			{
+				"name": "TotalReturns",
+				"type": "INT_64"
+			},
+			{
+				"name": "AverageMonthlyUSD",
+				"type": "DECIMAL",
+				"precision": 14,
+				"scale": 4
+			},
+			{
+				"name": "ReturnRate",
+				"type": "DECIMAL",
+				"precision": 12,
+				"scale": 2
+			},
+			{
+				"name": "MonthsOfOperation",
+				"type": "DECIMAL",
+				"precision": 5,
+				"scale": 1
+			}
+		]
+	}
+}
