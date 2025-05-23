@@ -1,0 +1,34 @@
+{
+	"name": "AzureSqlTable1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_GOLD_DATABASE",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "RateDate",
+				"type": "date"
+			},
+			{
+				"name": "BaseCurrency",
+				"type": "nvarchar"
+			},
+			{
+				"name": "TargetCurrency",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ExchangeRate",
+				"type": "float",
+				"precision": 15
+			}
+		],
+		"typeProperties": {
+			"schema": "GlobalFashion",
+			"table": "ExchangeRates"
+		}
+	}
+}

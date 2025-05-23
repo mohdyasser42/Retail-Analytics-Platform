@@ -1,0 +1,38 @@
+{
+	"name": "Parquet1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_ADLS_Connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "part-00000-a20978c8-272a-47f7-9d4d-fd994968d7f7.c000.snappy.parquet",
+				"folderPath": "gold/exchange_rates",
+				"fileSystem": "global-fashion-retails-data"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "RateDate",
+				"type": "DATE"
+			},
+			{
+				"name": "BaseCurrency",
+				"type": "UTF8"
+			},
+			{
+				"name": "TargetCurrency",
+				"type": "UTF8"
+			},
+			{
+				"name": "ExchangeRate",
+				"type": "DOUBLE"
+			}
+		]
+	}
+}

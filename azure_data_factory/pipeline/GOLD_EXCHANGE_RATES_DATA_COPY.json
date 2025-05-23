@@ -1,0 +1,104 @@
+{
+	"name": "GOLD_EXCHANGE_RATES_DATA_COPY",
+	"properties": {
+		"description": "Copying Gold Layer Exchange Rates Data From ADLS to \"gfr-data\" SQL Database.",
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "RateDate",
+									"type": "DATE"
+								},
+								"sink": {
+									"name": "RateDate",
+									"type": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "BaseCurrency",
+									"type": "UTF8"
+								},
+								"sink": {
+									"name": "BaseCurrency",
+									"type": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "TargetCurrency",
+									"type": "UTF8"
+								},
+								"sink": {
+									"name": "TargetCurrency",
+									"type": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ExchangeRate",
+									"type": "DOUBLE"
+								},
+								"sink": {
+									"name": "ExchangeRate",
+									"type": "float",
+									"precision": 15
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Parquet1",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSqlTable1",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": []
+	}
+}
