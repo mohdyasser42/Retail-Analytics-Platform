@@ -1,0 +1,38 @@
+{
+	"name": "SourceDataset_22c",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GFR_ADLS_Connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "part-00000-7a37728c-e51a-491c-bcbf-b8ad860c0e51.c000.snappy.parquet",
+				"folderPath": "gold/employees",
+				"fileSystem": "global-fashion-retails-data"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "EmployeeID",
+				"type": "INT_32"
+			},
+			{
+				"name": "StoreID",
+				"type": "INT_32"
+			},
+			{
+				"name": "Name",
+				"type": "UTF8"
+			},
+			{
+				"name": "Position",
+				"type": "UTF8"
+			}
+		]
+	}
+}
