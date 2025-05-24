@@ -9,15 +9,20 @@ st.set_page_config(page_title="Executive", layout="wide")
 
     
 # Streamlit app layout
-st.title("Global Fashion Retails")
-st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
+header1, header2 = st.columns([0.8,0.2], vertical_alignment="bottom")
+
+header1.title("Global Fashion Retails")
+
+with header2:
+    st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
+
+st.header("Revenue and Profitability Analysis")
 
 executive_dashboard = st.container()
 
 with executive_dashboard:
     # Main content area
-    st.header("Executive Dashboard")
-
+    st.subheader("Analysis Dashboard")
     # Get the embed code from Power BI
     powerbi_embed_code = """
     <div style="display: flex; justify-content: center; width: 100%; height: 100%">

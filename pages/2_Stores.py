@@ -12,8 +12,13 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 
 
 # Streamlit app layout
-st.title("Global Fashion Retails")
-st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
+header1, header2 = st.columns([0.8,0.2], vertical_alignment="bottom")
+
+header1.title("Global Fashion Retails")
+
+with header2:
+    st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
+
 st.header("Store Performance Analysis")
 
 # Load sales data from ADLS Gen2
@@ -37,7 +42,6 @@ tab1, tab2, tab3, tab4 = st.tabs(["Dashboard", "Overview", "Store Profile", "Geo
 # Main content area
 with tab1:
     st.subheader("Analysis Dashboard")
-    
 
     # Get the embed code from Power BI
     powerbi_embed_code = """

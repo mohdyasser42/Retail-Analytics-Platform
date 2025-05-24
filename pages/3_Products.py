@@ -15,8 +15,13 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 
 
 # Streamlit app layout
-st.title("Global Fashion Retails")
-st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
+header1, header2 = st.columns([0.8,0.2], vertical_alignment="bottom")
+
+header1.title("Global Fashion Retails")
+
+with header2:
+    st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
+
 st.header("Product Performance Analysis")
 
 
