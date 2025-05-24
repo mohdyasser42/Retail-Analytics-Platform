@@ -13,6 +13,7 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 
 # Streamlit app layout
 st.title("Global Fashion Retails")
+st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
 st.header("Store Performance Analysis")
 
 # Load sales data from ADLS Gen2

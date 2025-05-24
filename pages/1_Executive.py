@@ -10,6 +10,7 @@ st.set_page_config(page_title="Executive", layout="wide")
     
 # Streamlit app layout
 st.title("Global Fashion Retails")
+st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
 
 executive_dashboard = st.container()
 

@@ -5,15 +5,6 @@ import pandas.io.sql as psql
 from config import read_parquet_from_adls
 import io
 
-import pyodbc
-
-def check_odbc_drivers():
-    drivers = pyodbc.drivers()
-    for driver in drivers:
-        print(f"Available driver: {driver}")
-    return drivers
-
-
 
 # Configuration - store these securely in Streamlit secrets or environment variables
 st.set_page_config(page_title="Product", layout="wide")
@@ -25,6 +16,7 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 
 # Streamlit app layout
 st.title("Global Fashion Retails")
+st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
 st.header("Product Performance Analysis")
 
 
@@ -50,9 +42,6 @@ with tab1:
 with tab2:
     
     st.subheader("Products Overview")
-
-    drivers = check_odbc_drivers()
-    st.write(f"Driver version: {drivers}")
     
     # Load sales data from ADLS Gen2
     container_name = st.secrets["azure_storage"]["container_name"]

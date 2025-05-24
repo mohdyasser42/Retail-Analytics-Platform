@@ -99,7 +99,10 @@ def get_database_engine():
             "driver": "ODBC Driver 17 for SQL Server",
             "Encrypt": "yes",
             "TrustServerCertificate": "yes",
-            "Connection Timeout": "30"
+            "Connection Timeout": "120",
+            "Command Timeout": "300",
+            "ConnectRetryCount": "3",
+            "ConnectRetryInterval": "10"
         }
     )
     
@@ -112,19 +115,38 @@ def get_database_engine():
     )
 
 @st.cache_data(ttl=86400)
-def fetch_customers_data():  
+def fetch_customer_byid(id):  
     engine = get_database_engine()
-    query = "SELECT * FROM [GlobalFashion].[Customers]"
+    query = f"SELECT * FROM [GlobalFashion].[Customers] WHERE CustomerID = {id}"
     return pd.read_sql(query, engine)
 
 @st.cache_data(ttl=86400)
-def fetch_invoice_fact_data():  
+def fetch_customers_byname(name):  
     engine = get_database_engine()
-    query = "SELECT * FROM [GlobalFashion].[InvoiceFact]"
+    query = f"SELECT TOP 20 CustomerID, Name, Gender, City, Country FROM [GlobalFashion].[Customers] WHERE Name LIKE '{name}%'"
     return pd.read_sql(query, engine)
 
 @st.cache_data(ttl=86400)
-def fetch_invoice_line_items_data():  
+def fetch_customer_byemail(email):  
     engine = get_database_engine()
-    query = "SELECT * FROM [GlobalFashion].[InvoiceLineItems]"
+    query = f"SELECT TOP 1 * FROM [GlobalFashion].[Customers] WHERE Email = '{email}'"
     return pd.read_sql(query, engine)
+
+@st.cache_data(ttl=86400)
+def fetch_customer_bytelephone(telephone):  
+    engine = get_database_engine()
+    query = f"SELECT TOP 1 * FROM [GlobalFashion].[Customers] WHERE Telephone = '{telephone}'"
+    return pd.read_sql(query, engine)
+
+@st.cache_data(ttl=86400)
+def fetch_invoice_fact_data(id):  
+    engine = get_database_engine()
+    query = f"SELECT [InvoiceID], [CustomerID], [Date], [Time], [StoreID], [StoreCountry], [StoreCity], [EmployeeID], [TotalQuantity], [Currency], [CurrencySymbol], [TransactionType], [PaymentMethod], [InvoiceTotal], [InvoiceTotalUSD] FROM [GlobalFashion].[InvoiceFact] Where CustomerID = {id} ORDER BY [Date] DESC, [Time] DESC"
+    return pd.read_sql(query, engine)
+
+@st.cache_data(ttl=86400)
+def fetch_invoice_line_items_data(id):  
+    engine = get_database_engine()
+    query = f"SELECT * FROM [GlobalFashion].[InvoiceLineItems] Where CustomerID = {id} ORDER BY [Date] DESC"
+    return pd.read_sql(query, engine)
+
