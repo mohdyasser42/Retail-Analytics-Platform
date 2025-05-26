@@ -15,7 +15,22 @@ header1, header2 = st.columns([0.8,0.1], vertical_alignment="bottom")
 header1.title("Global Fashion Retails")
 
 with header2:
-    st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
+    st.html("""
+        <style>
+            .logout{
+                border: 1px solid #D3D3D3;
+                border-radius: 10px;
+                color: black;
+                padding: .6em .8em .6em .8em;
+                text-decoration: none;
+            }
+            .logout:hover{
+                border: 1px solid #f63366;
+                color: #f63366;
+            }
+        </style>
+        <a class="logout" href="https://globalfashionretails.azurewebsites.net/.auth/logout" rel="nofollow noopener">Logout</a>
+    """)
 
 st.header("Store Performance Analysis")
 
