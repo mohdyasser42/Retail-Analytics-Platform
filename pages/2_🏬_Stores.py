@@ -1,6 +1,4 @@
 import streamlit as st 
-import pandas as pd
-import numpy as np
 from config import read_parquet_from_adls
 
 
@@ -12,7 +10,7 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 
 
 # Streamlit app layout
-header1, header2 = st.columns([0.8,0.2], vertical_alignment="bottom")
+header1, header2 = st.columns([0.8,0.1], vertical_alignment="bottom")
 
 header1.title("Global Fashion Retails")
 
@@ -24,6 +22,7 @@ st.header("Store Performance Analysis")
 # Load sales data from ADLS Gen2
 container_name = st.secrets["azure_storage"]["container_name"]
 file_path = st.secrets["azure_storage"]["stores_file_path"]
+store_df = None
 
 with st.spinner("Loading Stores data..."):
     store_df = read_parquet_from_adls(container_name, file_path)
@@ -46,7 +45,7 @@ with tab1:
     # Get the embed code from Power BI
     powerbi_embed_code = """
     <div style="display: flex; justify-content: center; width: 100%; height: 100%">
-        <iframe title="Stores" width="1024" height="1500" src="https://app.powerbi.com/view?r=eyJrIjoiZDc5ZWUyZmEtZDI1NC00YzU3LWI5OTgtZTU0MzVjMzE1M2U1IiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe>
+        <iframe title="Stores" width="1024" height="1500" src="https://app.powerbi.com/view?r=eyJrIjoiNGVhNzhlZTUtNjRkZi00ZTIwLTgxYTEtMDM0NmIxYWY0MTZhIiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe>
     </div>
     """
 
@@ -86,7 +85,7 @@ with tab2:
             st.subheader("Stores Table")
             st.dataframe(country_metrics, hide_index=True)
     else:
-        st.error("Unable to load sales data. Please check your connection to Azure Data Lake.")
+        st.error("Unable to load sales data. Please check your connection to Azure Data Lake Storage.")
 
 
     

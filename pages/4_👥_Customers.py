@@ -1,7 +1,5 @@
 import streamlit as st 
-import pandas as pd
-from config import fetch_customer_byid, fetch_customers_byname, fetch_customer_byemail, fetch_customer_bytelephone, fetch_invoice_line_items_data, fetch_invoice_fact_data
-import io
+from config import fetch_customer_byid, fetch_customers_byname, fetch_customer_byemail, fetch_customer_bytelephone, fetch_invoice_fact_data
 import re
 
 # Configuration - store these securely in Streamlit secrets or environment variables
@@ -13,12 +11,14 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 
 
 # Streamlit app layout
-header1, header2 = st.columns([0.8,0.2], vertical_alignment="bottom")
+header1, header2 = st.columns([0.8,0.1], vertical_alignment="bottom")
 
 header1.title("Global Fashion Retails")
 
 with header2:
     st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
+
+st.header("Customer and Value Segment Analysis")
 
 # Create tabs for different views
 tab1, tab2 = st.tabs(["Dashboard", "Customer Profile"])
@@ -30,7 +30,7 @@ with tab1:
     # Get the embed code from Power BI
     powerbi_embed_code = """
     <div style="display: flex; justify-content: center; width: 100%; height: 100%">
-        <iframe title="Customers" width="1024" height="1500" src="https://app.powerbi.com/view?r=eyJrIjoiMTZjODQ5YTYtYmY3OS00NjEyLTliNGEtNWI1YTg1MTlhZGNkIiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe>
+        <iframe title="Customers" width="1024" height="1500" src="https://app.powerbi.com/view?r=eyJrIjoiODIxMWQyOWItNzhkMy00MGYzLTk4NDItOTk0YzY4MzNmNjUzIiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe>
     </div>
     """
 

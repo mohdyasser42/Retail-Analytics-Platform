@@ -103,9 +103,8 @@ def get_database_engine():
             "Connection Timeout": "120",
             "Command Timeout": "300",
             "ConnectRetryCount": "3",
-            "ConnectRetryInterval": "10",
-            "Login Timeout": "60"   
-        }
+            "ConnectRetryInterval": "10"
+            }
     )
     
     return create_engine(
@@ -154,7 +153,7 @@ def fetch_products_data():
     try:
         return pd.read_sql(text(query), engine)
     except Exception as e:
-        st.error(f"Error fetching products with sales data: {e}")
+        st.error(f"Error fetching products with sales data.")
         return pd.DataFrame()
 
 

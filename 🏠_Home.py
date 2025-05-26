@@ -1,8 +1,4 @@
 import streamlit as st 
-from streamlit_extras.stylable_container import stylable_container
-import pandas as pd
-from config import read_parquet_from_adls
-import io
 import pages as pg
 
 st.set_page_config(page_title="Dashboard", layout="wide")

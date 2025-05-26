@@ -1,9 +1,5 @@
 import streamlit as st 
-import pandas as pd
-import pyodbc
-import pandas.io.sql as psql
-from config import read_parquet_from_adls, fetch_products_data
-import io
+from config import fetch_products_data
 
 
 # Configuration - store these securely in Streamlit secrets or environment variables
@@ -15,7 +11,7 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 
 
 # Streamlit app layout
-header1, header2 = st.columns([0.8,0.2], vertical_alignment="bottom")
+header1, header2 = st.columns([0.8,0.1], vertical_alignment="bottom")
 
 header1.title("Global Fashion Retails")
 
@@ -47,10 +43,6 @@ with tab1:
 with tab2:
     
     st.subheader("Products Overview")
-    
-    # Load sales data from ADLS Gen2
-    container_name = st.secrets["azure_storage"]["container_name"]
-    file_path = st.secrets["azure_storage"]["products_file_path"]
     
     with st.spinner("Loading Products data..."):
         products_df = fetch_products_data()
@@ -108,6 +100,6 @@ with tab2:
                                 }
                                 )
     else:
-        st.error("Unable to load sales data. Please check your connection to Azure SQL Database.")
+        st.error("Unable to load sales data. Please check your connection to Azure SQL Database or Restart Application.")
 
 # Additional pages would follow a similar pattern...
