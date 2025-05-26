@@ -92,9 +92,10 @@ with cont3col1:
 with cont3col2:
     st.markdown("<h4><span style='font-size:50px; font-weight: normal;'>B</span>uilt on Microsoft Azure cloud infrastructure with Databricks for data processing. Processing and Analysing Data with enterprise-level security.</h4>", unsafe_allow_html=True)
 
-with st.container():
-    st.html(
+footer = st.container()
+with footer:
+    st.markdown(
         """
-        <h4 style='text-align: center; font-style: italic; font-family: cursive'>Platform Created by Yasser Mohammed</h4>
-    """ )
+        <h5 style='text-align: center; font-style: italic; font-family: cursive'>Platform Created by Yasser Mohammed</h5>
+    """, unsafe_allow_html=True )
 

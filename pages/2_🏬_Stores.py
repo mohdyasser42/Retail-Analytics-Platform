@@ -98,7 +98,27 @@ with tab2:
 
             # Display the Analysis
             st.subheader("Stores Table")
-            st.dataframe(country_metrics, hide_index=True)
+            st.dataframe(country_metrics,
+                            hide_index=True,
+                            column_config={
+                                    "StoreCount": "Store Count",
+                                    "CountryTotalSales": st.column_config.NumberColumn(
+                                        "Total Revenue",
+                                        format="$%.2f"
+                                    ),
+                                    "AvgStoreRevenue": st.column_config.NumberColumn(
+                                        "Avg Store Revenue",
+                                        format="$%.2f"
+                                    ),
+                                    "AvgMonthlyRevenue": st.column_config.NumberColumn(
+                                        "Avg Monthly Revenue",
+                                        format="$%.2f"
+                                    ),
+                                    "AvgReturnRate": st.column_config.NumberColumn(
+                                        "Avg Return Rate",
+                                        format="%.2f"
+                                    )
+                                })
     else:
         st.error("Unable to load sales data. Please check your connection to Azure Data Lake Storage.")
 
