@@ -150,11 +150,7 @@ def fetch_products_data():
     ORDER BY COALESCE(sales.TotalQuantitySold, 0) DESC
     '''
     
-    try:
-        return pd.read_sql(text(query), engine)
-    except Exception as e:
-        st.error(f"Error fetching products with sales data.")
-        return pd.DataFrame()
+    return pd.read_sql(query, engine)
 
 
 @st.cache_data(ttl=86400)
@@ -167,49 +163,29 @@ def fetch_customer_byid(id):
 def fetch_customers_byname(name):  
     engine = get_database_engine()
     query = f"SELECT TOP 20 CustomerID, Name, Gender, City, Country FROM [GlobalFashion].[Customers] WHERE Name LIKE '{name}%'"
-    try:
-        return pd.read_sql(text(query), engine)
-    except Exception as e:
-        st.error(f"Error fetching customers data: {e}")
-        return pd.DataFrame()
+    return pd.read_sql(query, engine)
 
 @st.cache_data(ttl=86400)
 def fetch_customer_byemail(email):  
     engine = get_database_engine()
     query = f"SELECT TOP 1 * FROM [GlobalFashion].[Customers] WHERE Email = '{email}'"
-    try:
-        return pd.read_sql(text(query), engine)
-    except Exception as e:
-        st.error(f"Error fetching customers data: {e}")
-        return pd.DataFrame()
+    return pd.read_sql(query, engine)
 
 @st.cache_data(ttl=86400)
 def fetch_customer_bytelephone(telephone):  
     engine = get_database_engine()
     query = f"SELECT TOP 1 * FROM [GlobalFashion].[Customers] WHERE Telephone = '{telephone}'"
-    try:
-        return pd.read_sql(text(query), engine)
-    except Exception as e:
-        st.error(f"Error fetching customers data: {e}")
-        return pd.DataFrame()
+    return pd.read_sql(query, engine)
 
 @st.cache_data(ttl=86400)
 def fetch_invoice_fact_data(id):  
     engine = get_database_engine()
     query = f"SELECT [InvoiceID], [CustomerID], [Date], [Time], [StoreID], [StoreCountry], [StoreCity], [EmployeeID], [TotalQuantity], [Currency], [CurrencySymbol], [TransactionType], [PaymentMethod], [InvoiceTotal], [InvoiceTotalUSD] FROM [GlobalFashion].[InvoiceFact] Where CustomerID = {id} ORDER BY [Date] DESC, [Time] DESC"
-    try:
-        return pd.read_sql(text(query), engine)
-    except Exception as e:
-        st.error(f"Error fetching Transactions data: {e}")
-        return pd.DataFrame()
+    return pd.read_sql(query, engine)
 
 @st.cache_data(ttl=86400)
 def fetch_invoice_line_items_data(id):  
     engine = get_database_engine()
     query = f"SELECT * FROM [GlobalFashion].[InvoiceLineItems] Where CustomerID = {id} ORDER BY [Date] DESC"
-    try:
-        return pd.read_sql(text(query), engine)
-    except Exception as e:
-        st.error(f"Error fetching Invoice Line Items data: {e}")
-        return pd.DataFrame()
+    return pd.read_sql(query, engine)
 
