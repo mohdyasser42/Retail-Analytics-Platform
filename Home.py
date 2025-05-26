@@ -1,28 +1,88 @@
 import streamlit as st 
+from streamlit_extras.stylable_container import stylable_container
 import pandas as pd
 from config import read_parquet_from_adls
 import io
 import pages as pg
 
-
 st.set_page_config(page_title="Dashboard", layout="wide")
 
-
-header1, header2 = st.columns([0.8,0.2])
+with st.container():
+    header1, header2 = st.columns([0.8,0.1])
+    st.write("")
+    st.write("")
 with header2:
     st.link_button("Logout", "https://globalfashionretails.azurewebsites.net/.auth/logout")
 
-homecol1, homecol2 = st.columns([2,1.5],border=False)
+with st.container():
+    homecolstart, homecol1, homecol2 = st.columns([0.2,2,1.5], vertical_alignment='center')
+    st.divider()
 
 with homecol1:
-    st.image("GFR-logo.png", width=200)
-    st.title("Global Fashion Retails")
-    st.write("Get Latest Fashion Trends For Your Family At Best Prices")
+    imgcol1, imgcol2 = st.columns([0.3,0.7], border=False)
+    imgcol2.image("GFR-logo.png", width=200)
+    st.title("Global Fashion Retails Analytics Platform")
+    st.markdown("<h5>Transforming Retail Data Into Actionable Business Intelligence</h5>", unsafe_allow_html=True)
     
 with homecol2:
     girlpng = """
         <div style="display: flex; justify-content: center; width: 100%; ">
-            <iframe src="https://lottie.host/embed/7aa7dc66-04d5-4198-84ed-3b2784cd1bb0/bHEnneQUnr.lottie" style="border: None; height: 400px; width: 600px"></iframe>
+            <iframe src="https://lottie.host/embed/e4d51f71-30ca-4b42-ae78-20e929661a4a/Rcv2Xvq10X.lottie" style="border: None; height: 400px; width: 100%"></iframe>
         </div>
     """
-    st.components.v1.html(girlpng, height=600)
+    st.components.v1.html(girlpng, height=450)
+
+
+with st.container(border=False):
+    cont1col1, cont1col2 = st.columns([1.5,2],border=False, vertical_alignment='center')
+    st.divider()
+
+with cont1col1:
+    cont1png = """
+        <div style="display: flex; justify-content: center; width: 100%; ">
+            <iframe src="https://lottie.host/embed/775a364b-d740-4c33-a585-746605e3449c/xAChvsM6q1.lottie" style="border: None; height: 400px; width: 100%"></iframe>
+        </div>
+    """
+    st.components.v1.html(cont1png, height=450)
+
+with cont1col2:
+    st.markdown("<h4><span style='font-size:50px; font-weight: normal;'>A</span>nalyzing 6M+ transactions, 1.6M+ customers, 1.7k+ products and 35 global stores to drive data-driven decisions and maximize profitability.</h4>", unsafe_allow_html=True)
+
+
+with st.container():
+    cont2colstart, cont2col1, cont2col2 = st.columns([0.2,2,1.5],border=False, vertical_alignment='center')
+    st.divider()
+
+with cont2col1:
+    st.markdown("<h4><span style='font-size:50px; font-weight: normal;'>T</span>ransform your retail data into actionable insights with comprehensive dashboards, customer profiling, store and product analytics, and interactive visualizations that drive smarter business decisions.</h4>", unsafe_allow_html=True)
+
+with cont2col2:
+    cont2png = """
+        <div style="display: flex; justify-content: center; width: 100%; ">
+            <iframe src="https://lottie.host/embed/b5acc8fd-4fb7-4ff4-8ebd-5b741cadfee7/xhSGnMhEca.lottie" style="border: None; height: 400px; width: 100%"></iframe>
+        </div>
+    """
+    st.components.v1.html(cont2png, height=450)
+
+
+with st.container():
+    cont3col1, cont3col2 = st.columns([1.5,2],border=False, vertical_alignment='center')
+    st.divider()
+
+with cont3col1:
+    cont3png = """
+        <div style="display: flex; justify-content: center; width: 100%; ">
+            <iframe src="https://lottie.host/embed/918d02bd-2ac0-46e0-9cf2-7fca943f2bac/6fsDaPgFum.lottie" style="border: None; height: 400px; width: 100%"></iframe>
+        </div>
+    """
+    st.components.v1.html(cont3png, height=450)
+
+with cont3col2:
+    st.markdown("<h4><span style='font-size:50px; font-weight: normal;'>B</span>uilt on Microsoft Azure cloud infrastructure with Databricks for data processing. Processing and Analysing Data with enterprise-level security.</h4>", unsafe_allow_html=True)
+
+with st.container():
+    st.html(
+        """
+        <h4 style='text-align: center; font-style: italic; font-family: cursive'>Platform Created by Yasser Mohammed</h4>
+    """ )
+

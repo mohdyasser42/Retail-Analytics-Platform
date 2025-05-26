@@ -41,9 +41,6 @@ with tab1:
 with tab2:
     
     st.subheader("Customer Profile")
-    
-    # with st.spinner("Loading Transactions data..."):
-    #     invoice_line_df = fetch_invoice_line_items_data()
 
     # Store Overview 
     qry_result = None
@@ -207,7 +204,7 @@ with tab2:
         """
         inv_logo = """
             <div style="display: flex; justify-content: center; width: 100%; ">
-                <iframe src="https://lottie.host/embed/bde9a628-3e7d-4031-acf5-dd4eff80155f/35mpdp4z4v.lottie" style="border: None;"></iframe>
+                <iframe src="https://lottie.host/embed/a1c5767c-12c7-4588-9036-30dc5f87ac0a/BN1dtmxBPa.lottie" style="border: None;"></iframe>
             </div>
         """
         st.write("")
@@ -321,6 +318,7 @@ with tab2:
                             cont5 = st.container()
 
                             with cont1:
+                                st.write("")
                                 c1col1, c1col2, c1col3 = st.columns([1.9,1.2,1.9])
                                 with c1col1:
                                     st.components.v1.html(inv_logo)

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import pyodbc
 import pandas.io.sql as psql
-from config import read_parquet_from_adls
+from config import read_parquet_from_adls, fetch_products_data
 import io
 
 
@@ -53,11 +53,11 @@ with tab2:
     file_path = st.secrets["azure_storage"]["products_file_path"]
     
     with st.spinner("Loading Products data..."):
-        products_df = read_parquet_from_adls(container_name, file_path)
+        products_df = fetch_products_data()
     
-    if products_df is not None:  
+    if not products_df.empty:  
         # Store Overview 
-        columns_to_display = ["ProductID", "Category", "SubCategory", "DescriptionEN", "Color", "Sizes", "ProductionCost"]
+        columns_to_display = ["ProductID", "Category", "SubCategory", "DescriptionEN", "Color", "Sizes", "ProductionCost", "TotalQuantitySold","UniqueCustomers", "TotalRevenue"]
 
         df = products_df[columns_to_display]
 
@@ -83,8 +83,7 @@ with tab2:
 
         if subcategory_filter:
             final_df = filtered_df[filtered_df["SubCategory"] == subcategory_filter]
-            display_cols = ["ProductID", "DescriptionEN", "Color", "Sizes", "ProductionCost"]
-            final_df = final_df[display_cols].sort_values(by=['DescriptionEN'])
+            final_df = final_df.sort_values(by=['DescriptionEN'])
 
 
         if final_df is not None:
@@ -98,11 +97,17 @@ with tab2:
                                     "DescriptionEN": "Product Name",
                                     "ProductionCost": st.column_config.NumberColumn(
                                         "Production Cost",
-                                        format="$ %.2f"
-                                    ) 
+                                        format="$%.2f"
+                                    ),
+                                    "TotalQuantitySold": "Quantity Sold",
+                                    "UniqueCustomers": "Buyers Count",
+                                    "TotalRevenue": st.column_config.NumberColumn(
+                                        "Net Revenue",
+                                        format="$%.2f"
+                                    )
                                 }
                                 )
     else:
-        st.error("Unable to load sales data. Please check your connection to Azure Data Lake.")
+        st.error("Unable to load sales data. Please check your connection to Azure SQL Database.")
 
 # Additional pages would follow a similar pattern...
