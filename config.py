@@ -7,7 +7,6 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 from urllib.parse import quote
 from azure.keyvault.secrets import SecretClient
-from azure.identity import DefaultAzureCredential
 import os
 import io
 
@@ -18,8 +17,16 @@ def get_client_secret():
     KVUri = f"https://gfr-key-vault.vault.azure.net/"
     secretName = "db-client-secret"
 
-    credential = DefaultAzureCredential()
-    client = SecretClient(vault_url=KVUri, credential=credential)
+    tenant_id = "02045b3b-9790-4008-b83c-d155576e6c7e"
+    client_id = "7c8b5b95-0919-42b5-8c89-924c20d45ef0"
+    client_secret = "2gX8Q~VFWSQIso5ZgHiq4~9L~InITOJO6pMSrbbT"
+
+    secretcredential = ClientSecretCredential(
+        tenant_id=tenant_id,
+        client_id=client_id,
+        client_secret=client_secret
+    )
+    client = SecretClient(vault_url=KVUri, credential=secretcredential)
     retrieved_secret = client.get_secret(secretName)
     return retrieved_secret
 
