@@ -35,7 +35,7 @@ with homecol1:
     imgcol2.image("GFR-logo.png", width=200)
     st.title("Global Fashion Retails Analytics Platform")
     st.markdown("<h5>Transforming Retail Data Into Actionable Business Intelligence</h5>", unsafe_allow_html=True)
-    st.write(get_client_secret)
+    st.write(get_client_secret())
     
 with homecol2:
     girlpng = """
