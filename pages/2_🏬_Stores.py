@@ -1,19 +1,18 @@
 import streamlit as st 
 from config import read_parquet_from_adls
 
-
-# Configuration - store these securely in Streamlit secrets or environment variables
-st.set_page_config(page_title="Dashboard", layout="wide")
+# Stores page configurations
+st.set_page_config(page_title="Stores", layout="wide", initial_sidebar_state="collapsed")
 
 # Removal of anchor icon from Streamlit Headers
 st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>")
 
-
-# Streamlit app layout
+# Header of the page
 header1, header2 = st.columns([0.8,0.1], vertical_alignment="bottom")
 
 header1.title("Global Fashion Retails")
 
+# Logout button
 with header2:
     st.html("""
         <style>
@@ -53,7 +52,7 @@ if store_df is not None:
 # Create tabs for different views
 tab1, tab2, tab3, tab4 = st.tabs(["Dashboard", "Overview", "Store Profile", "Geographic Locations"])
 
-# Main content area
+# Analysis Dashboard tab
 with tab1:
     st.subheader("Analysis Dashboard")
 
@@ -64,7 +63,7 @@ with tab1:
     </div>
     """
 
-    # Display using components
+    # Display dashboard using components
     st.components.v1.html(powerbi_embed_code, width=None, height=1400)
 
    
@@ -124,7 +123,7 @@ with tab2:
 
 
     
-# Store Details Tab
+# Store Profile Tab
 with tab3:
     st.subheader("Store Profile")
 
@@ -157,6 +156,7 @@ with tab3:
         st.write("")
         
         if final_df is not None:
+            # Profile Container
             pcol1, pcol2, pcol3 = st.columns([0.5,3,0.5], border=False)
 
             with pcol2:
@@ -169,8 +169,10 @@ with tab3:
                             <iframe src="https://lottie.host/embed/3163e453-3217-4f49-b752-b48ebd378e04/2e35UCkOoW.lottie" style="border: None;"></iframe>
                         </div>
                     """
+                    # Display Store Logo
                     st.components.v1.html(logo)
 
+                    # Getting Store Data in variables
                     store_name = final_df.iat[0, final_df.columns.get_loc("StoreName")]
                     store_id = final_df.iat[0, final_df.columns.get_loc("StoreID")]
                     store_country = final_df.iat[0, final_df.columns.get_loc("Country")]
@@ -187,7 +189,7 @@ with tab3:
                     st.markdown(f"<h2 style='text-align: center;'>{store_name}</h2>", unsafe_allow_html=True)
                     st.markdown("---")
 
-
+                    # Columns inside the profile containers
                     r1start, r1col1, r1col2, r1col3, r1col4 = st.columns([0.25,1,1,1,1])
                     st.write("")
                     st.write("")
@@ -198,6 +200,7 @@ with tab3:
                     st.write("")
                     st.write("")
 
+                    # Adding Store data variables to the columns
                     r1col1.markdown(f"<h5 style=''>Store ID</h5>", unsafe_allow_html=True)
                     r1col1.markdown(f"<p style=''>{store_id}</p>", unsafe_allow_html=True)
                     
@@ -262,5 +265,3 @@ with tab4:
         ) 
     else:
         st.error("Unable to load sales data. Please check your connection to Azure Data Lake.") 
-
-

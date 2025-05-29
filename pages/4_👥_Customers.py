@@ -2,19 +2,19 @@ import streamlit as st
 from config import fetch_customer_byid, fetch_customers_byname, fetch_customer_byemail, fetch_customer_bytelephone, fetch_invoice_fact_data
 import re
 
-# Configuration - store these securely in Streamlit secrets or environment variables
-st.set_page_config(page_title="Customers", layout="wide")
+# Customers page configurations
+st.set_page_config(page_title="Customers", layout="wide", initial_sidebar_state="collapsed")
 
     
 # Removal of anchor icon from Streamlit Headers
 st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>")
 
-
-# Streamlit app layout
+# Header of the page
 header1, header2 = st.columns([0.8,0.1], vertical_alignment="bottom")
 
 header1.title("Global Fashion Retails")
 
+# Logout button
 with header2:
     st.html("""
         <style>
@@ -38,7 +38,7 @@ st.header("Customer and Value Segment Analysis")
 # Create tabs for different views
 tab1, tab2 = st.tabs(["Dashboard", "Customer Profile"])
 
-# Main content area
+# Analysis Dashboard tab
 with tab1:
     st.subheader("Customer Analysis Dashboard")
 
@@ -323,7 +323,7 @@ with tab2:
                         inv_Ttype = row["TransactionType"]
                         inv_Pmethod = row["PaymentMethod"]
                         inv_total = row["InvoiceTotal"]
-                        inv_totalUSD = row["InvoiceTotalUSD"]
+                        inv_totalUSD = round(row["InvoiceTotalUSD"],2)
 
                         with st.container(border=True):
                             cont1 = st.container()
@@ -395,15 +395,4 @@ with tab2:
                                 st.markdown(f"<h5 style='text-align: center;font-family: cursive; font-style: italic'>Thank You for Choosing Global Fashion Retails. Your Style Inspiration Starts Here!</h5>", unsafe_allow_html=True)
                                 st.write("")
                                 st.write("")
-                        
-                            
-
-    
-
-    
-
-            
-
-            
-            
-        
+                                

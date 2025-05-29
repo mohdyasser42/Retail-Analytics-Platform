@@ -1,20 +1,19 @@
 import streamlit as st 
 from config import fetch_products_data
 
-
-# Configuration - store these securely in Streamlit secrets or environment variables
-st.set_page_config(page_title="Product", layout="wide")
+# Products page configurations
+st.set_page_config(page_title="Product", layout="wide", initial_sidebar_state="collapsed")
 
     
 # Removal of anchor icon from Streamlit Headers
 st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>")
 
-
-# Streamlit app layout
+# Header of the page
 header1, header2 = st.columns([0.8,0.1], vertical_alignment="bottom")
 
 header1.title("Global Fashion Retails")
 
+# Logout button
 with header2:
     st.html("""
         <style>
@@ -39,7 +38,7 @@ st.header("Product Performance Analysis")
 # Create tabs for different views
 tab1, tab2 = st.tabs(["Dashboard", "Products Mix Overview"])
 
-# Main content area
+# Analysis Dashboard tab
 with tab1:
 
     st.subheader("Product Analysis Dashboard")
@@ -54,9 +53,8 @@ with tab1:
     # Display using components
     st.components.v1.html(powerbi_embed_code, width=None, height=1400)
 
-   
+# Product Overview Tab
 with tab2:
-    
     st.subheader("Products Overview")
     
     with st.spinner("Loading Products data..."):
@@ -117,4 +115,3 @@ with tab2:
     else:
         st.error("Unable to load sales data. Please check your connection to Azure SQL Database or Restart Application.")
 
-# Additional pages would follow a similar pattern...

@@ -1,12 +1,16 @@
 import streamlit as st 
 import pages as pg
-import os
-st.set_page_config(page_title="Dashboard", layout="wide")
 
+# Home page configurations
+st.set_page_config(page_title="Homepage", layout="wide", initial_sidebar_state="collapsed")
+
+# Header of the page
 with st.container():
     header1, header2 = st.columns([0.8,0.1])
     st.write("")
     st.write("")
+
+# Logout button
 with header2:
     st.html("""
         <style>
@@ -26,6 +30,7 @@ with header2:
     """)
     
 
+# Section 1
 with st.container():
     homecolstart, homecol1, homecol2 = st.columns([0.2,2,1.5], vertical_alignment='center')
     st.divider()
@@ -35,7 +40,6 @@ with homecol1:
     imgcol2.image("GFR-logo.png", width=200)
     st.title("Global Fashion Retails Analytics Platform")
     st.markdown("<h5>Transforming Retail Data Into Actionable Business Intelligence</h5>", unsafe_allow_html=True)
-    st.write(os.environ['test_namedb'])
     
 with homecol2:
     girlpng = """
@@ -46,6 +50,7 @@ with homecol2:
     st.components.v1.html(girlpng, height=450)
 
 
+# Section 2
 with st.container(border=False):
     cont1col1, cont1col2 = st.columns([1.5,2],border=False, vertical_alignment='center')
     st.divider()
@@ -62,6 +67,7 @@ with cont1col2:
     st.markdown("<h4><span style='font-size:50px; font-weight: normal;'>A</span>nalyzing 6M+ transactions, 1.6M+ customers, 1.7k+ products and 35 global stores to drive data-driven decisions and maximize profitability.</h4>", unsafe_allow_html=True)
 
 
+# Section 3
 with st.container():
     cont2colstart, cont2col1, cont2col2 = st.columns([0.2,2,1.5],border=False, vertical_alignment='center')
     st.divider()
@@ -78,6 +84,7 @@ with cont2col2:
     st.components.v1.html(cont2png, height=450)
 
 
+# Section 4
 with st.container():
     cont3col1, cont3col2 = st.columns([1.5,2],border=False, vertical_alignment='center')
     st.divider()
@@ -93,6 +100,7 @@ with cont3col1:
 with cont3col2:
     st.markdown("<h4><span style='font-size:50px; font-weight: normal;'>B</span>uilt on Microsoft Azure cloud infrastructure with Databricks for data processing. Processing and Analysing Data with enterprise-level security.</h4>", unsafe_allow_html=True)
 
+# Footer of the page
 footer = st.container()
 with footer:
     st.markdown(

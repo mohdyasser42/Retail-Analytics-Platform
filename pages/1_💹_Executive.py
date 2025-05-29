@@ -1,16 +1,15 @@
 import streamlit as st 
 from config import read_parquet_from_adls
 
+# Executive page configurations
+st.set_page_config(page_title="Executive", layout="wide", initial_sidebar_state="collapsed")
 
-# Configuration - store these securely in Streamlit secrets or environment variables
-st.set_page_config(page_title="Executive", layout="wide")
-
-    
-# Streamlit app layout
+# Header of the page
 header1, header2 = st.columns([0.8,0.1], vertical_alignment="bottom")
 
 header1.title("Global Fashion Retails")
 
+# Logout button
 with header2:
     st.html("""
         <style>
@@ -31,6 +30,7 @@ with header2:
 
 st.header("Revenue and Profitability Analysis")
 
+# Analysis Dashboard container
 executive_dashboard = st.container()
 
 with executive_dashboard:

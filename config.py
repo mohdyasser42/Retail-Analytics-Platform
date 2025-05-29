@@ -3,22 +3,21 @@ import pandas as pd
 from azure.storage.filedatalake import DataLakeServiceClient
 from azure.identity import ClientSecretCredential
 import pyarrow.parquet as pq
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
-from urllib.parse import quote
 from azure.keyvault.secrets import SecretClient
-import os
 import io
 
-# Get 
+# Get Client Secret of the Global Fashion Retails Application
 @st.cache_resource
 def get_client_secret():
     KVUri = f"https://gfr-key-vault.vault.azure.net/"
-    secretName = "db-client-secret"
+    secretName = st.secrets["get_secret_keyvault"]["client_secret_name"]
 
-    tenant_id = "02045b3b-9790-4008-b83c-d155576e6c7e"
-    client_id = "7c8b5b95-0919-42b5-8c89-924c20d45ef0"
-    client_secret = "2gX8Q~VFWSQIso5ZgHiq4~9L~InITOJO6pMSrbbT"
+
+    tenant_id = st.secrets["get_secret_keyvault"]["tenant_id"]
+    client_id = st.secrets["get_secret_keyvault"]["client_id"]
+    client_secret = st.secrets["get_secret_keyvault"]["client_secret"]
 
     secretcredential = ClientSecretCredential(
         tenant_id=tenant_id,
@@ -33,13 +32,11 @@ def get_client_secret():
 # Authentication configuration
 @st.cache_resource
 def get_credentials():
-    # Method 1: Service Principal authentication (most secure)
+    # Service Principal authentication (most secure)
     tenant_id = st.secrets["azure_credentials"]["tenant_id"]
     client_id = st.secrets["azure_credentials"]["client_id"]
-    # client_secret = st.secrets["azure_credentials"]["client_secret"]
     client_secret = get_client_secret()
 
-    
     credential = ClientSecretCredential(
         tenant_id=tenant_id,
         client_id=client_id,
