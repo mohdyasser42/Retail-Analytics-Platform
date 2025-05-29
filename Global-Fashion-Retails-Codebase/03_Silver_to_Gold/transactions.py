@@ -77,24 +77,28 @@ from pyspark.sql.types import IntegerType
 print("\nLoading Silver Transactions Data...")
 tmp_transactions_df = spark.read.format(file_format).load(silver_transactions_path)
 transactions_df = spark.createDataFrame(tmp_transactions_df.rdd, transactions_schema)
+transactions_df.cache()
 print(f"Loaded {transactions_df.count()} Transactions Records")
 
 # Load Silver Layer Stores Data
 print("\nLoading Silver Stores Data...")
 tmp_stores_df = spark.read.format(file_format).load(silver_stores_path)
 stores_df = spark.createDataFrame(tmp_stores_df.rdd, stores_schema)
+stores_df.cache()
 print(f"Loaded {stores_df.count()} Stores Records")
 
 # Load Silver Layer Products Data
 print("\nLoading Silver Products Data...")
 tmp_products_df = spark.read.format(file_format).load(silver_products_path)
 products_df = spark.createDataFrame(tmp_products_df.rdd, products_schema)
+products_df.cache()
 print(f"Loaded {products_df.count()} Products Records")
 
 # Load Silver Layer Discounts Data
 print("\nLoading Silver Discounts Data...")
 tmp_discounts_df = spark.read.format(file_format).load(silver_discounts_path)
 discounts_df = spark.createDataFrame(tmp_discounts_df.rdd, discounts_schema2)
+discounts_df.cache()
 print(f"Loaded {discounts_df.count()} Discounts Records")
 
 # COMMAND ----------
@@ -236,7 +240,7 @@ invoice_line_items = transactions_df.withColumn("Date", F.to_date("Timestamp")) 
 stores_df2 = stores_df.select("StoreID", "Country", "City")
 
 # Selecting Category and SubCategory columns from Product Data
-products_df = products_df.select("ProductID", "Category", "SubCategory")
+products_df1 = products_df.select("ProductID", "Category", "SubCategory")
 
 # COMMAND ----------
 
@@ -251,7 +255,7 @@ invoice_line_items = invoice_line_items.withColumn("Date", F.to_date("Timestamp"
 # COMMAND ----------
 
 # Join with product info to get Category and SubCategory
-invoice_line_items = invoice_line_items.join(products_df, on="ProductID", how="left")
+invoice_line_items = invoice_line_items.join(products_df1, on="ProductID", how="left")
 
 # Join with store info to get Country and City
 invoice_line_items = invoice_line_items.join(stores_df2, on="StoreID", how="left")
@@ -379,67 +383,6 @@ SELECT * FROM invoice_line_items_with_discount
 
 # COMMAND ----------
 
-# Display count of records with and without discounts
-print("Transactions Summary:")
-summary_df = spark.sql("""
-SELECT
-    TransactionType,
-    CASE 
-        WHEN Discount > 0 THEN 'Discounted' 
-        ELSE 'Regular Price'
-    END AS PriceType,
-    CASE 
-        WHEN DiscountID IS NOT NULL THEN 'With DiscountID' 
-        WHEN Discount > 0 AND DiscountID IS NULL THEN 'Missing DiscountID'
-        ELSE 'No DiscountID Required'
-    END AS DiscountIDStatus,
-    COUNT(*) AS RecordCount
-FROM
-    invoice_line_items_with_discount
-GROUP BY
-    TransactionType,
-    CASE 
-        WHEN Discount > 0 THEN 'Discounted' 
-        ELSE 'Regular Price'
-    END,
-    CASE 
-        WHEN DiscountID IS NOT NULL THEN 'With DiscountID' 
-        WHEN Discount > 0 AND DiscountID IS NULL THEN 'Missing DiscountID'
-        ELSE 'No DiscountID Required'
-    END
-ORDER BY
-    TransactionType,
-    PriceType,
-    DiscountIDStatus
-""")
-display(summary_df)
-
-# COMMAND ----------
-
-# Create a summary of discount usage to validate
-print("Discount Usage Summary:")
-spark.sql("""
-SELECT 
-    d.DiscountID,
-    d.StartDate,
-    d.EndDate,
-    d.Discount,
-    d.Category,
-    d.SubCategory,
-    COUNT(t.InvoiceID) AS TransactionCount,
-    SUM(t.LineTotal) AS TotalSales
-FROM 
-    discounts d
-LEFT JOIN 
-    invoice_line_items_with_discount t ON d.DiscountID = t.DiscountID
-GROUP BY 
-    d.DiscountID, d.StartDate, d.EndDate, d.Discount, d.Category, d.SubCategory
-ORDER BY 
-    TransactionCount DESC
-""").show(10)
-
-# COMMAND ----------
-
 # Create surrogate keys for line items
 window_spec = Window.orderBy("InvoiceID", "Line")
 invoice_line_items_final = invoice_line_items_with_discount.withColumn("LineItemID", F.row_number().over(window_spec))
@@ -459,6 +402,90 @@ invoice_line_items_count = invoice_line_items.count()
 
 # Display sample of discounted transactions
 display(invoice_line_items.filter(col("Discount") > 0).limit(10))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Calculate Contribution Margin of each Transaction Line
+
+# COMMAND ----------
+
+# Register tables as temporary views for SQL operations
+invoice_line_items.createOrReplaceTempView("invoice_line_items")
+products_df.createOrReplaceTempView("products")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Check the products table structure to confirm ProductionCost column
+# MAGIC DESCRIBE products
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Calculate Contribution Margin for each line item
+# MAGIC CREATE OR REPLACE TEMPORARY VIEW invoice_line_items_with_margin AS
+# MAGIC SELECT 
+# MAGIC     i.LineItemID,
+# MAGIC     i.InvoiceID,
+# MAGIC     i.Line,
+# MAGIC     i.CustomerID,
+# MAGIC     i.ProductID,
+# MAGIC     i.Category,
+# MAGIC     i.SubCategory,
+# MAGIC     i.StoreID,
+# MAGIC     i.Country,
+# MAGIC     i.City,
+# MAGIC     i.Size,
+# MAGIC     i.Color,
+# MAGIC     i.UnitPrice,
+# MAGIC     i.Quantity,
+# MAGIC     i.Discount,
+# MAGIC     i.DiscountID,
+# MAGIC     i.SKU,
+# MAGIC     i.Date,
+# MAGIC     i.TransactionType,
+# MAGIC     i.LineTotal,
+# MAGIC     i.LineTotalUSD,
+# MAGIC     p.ProductionCost,
+# MAGIC     
+# MAGIC     -- Calculate Total Production Cost (Production Cost × Quantity)
+# MAGIC     CAST(p.ProductionCost * i.Quantity AS DECIMAL(10,4)) AS TotalProductionCost,
+# MAGIC     
+# MAGIC     -- Calculate Contribution Margin (LineTotal - TotalProductionCost)
+# MAGIC     -- Only for Sale transactions, for returns we'll keep it as NULL
+# MAGIC     CASE 
+# MAGIC         WHEN i.TransactionType = 'Sale' THEN 
+# MAGIC             CAST(i.LineTotalUSD - (p.ProductionCost * i.Quantity) AS DECIMAL(10,4))
+# MAGIC         ELSE NULL
+# MAGIC     END AS ContributionMargin,
+# MAGIC     
+# MAGIC     -- Calculate Contribution Margin Percentage (Margin / Revenue × 100)
+# MAGIC     -- Only for Sale transactions with positive LineTotalUSD
+# MAGIC     CASE 
+# MAGIC         WHEN i.TransactionType = 'Sale' AND i.LineTotalUSD > 0 THEN 
+# MAGIC             CAST(((i.LineTotalUSD - (p.ProductionCost * i.Quantity)) / i.LineTotalUSD) * 100 AS DECIMAL(10,2))
+# MAGIC         ELSE NULL
+# MAGIC     END AS ContributionMarginPercentage
+# MAGIC FROM 
+# MAGIC     invoice_line_items i
+# MAGIC LEFT JOIN 
+# MAGIC     products p ON i.ProductID = p.ProductID
+
+# COMMAND ----------
+
+# Convert SQL view to DataFrame
+invoice_line_items = spark.sql("""
+SELECT * FROM invoice_line_items_with_margin
+""")
+invoice_line_items.cache()
+invoice_line_items_count = invoice_line_items.count()
+
+# COMMAND ----------
+
+# Display sample with contribution margin data
+print("Invoice Line Items with Contribution Margin:")
+display(invoice_line_items.filter("TransactionType = 'Sale'").limit(10))
 
 # COMMAND ----------
 
@@ -522,6 +549,10 @@ tmp_gold_invoice_line_items_df = spark.read.format(file_format).load(gold_invoic
 gold_invoice_fact_df = spark.createDataFrame(tmp_gold_invoice_fact_df.rdd, invoice_fact_schema)
 gold_invoice_line_items_df = spark.createDataFrame(tmp_gold_invoice_line_items_df.rdd, invoice_line_items_schema)
 
+# Cache the DataFrames
+gold_invoice_fact_df.cache()
+gold_invoice_line_items_df.cache()
+
 # Compare record counts
 gold_invoice_fact_count = gold_invoice_fact_df.count()
 gold_invoice_line_items_count = gold_invoice_line_items_df.count()
@@ -529,6 +560,9 @@ gold_invoice_line_items_count = gold_invoice_line_items_df.count()
 print(f"Gold invoice_fact record count: {gold_invoice_fact_count}")
 print(f"Gold invoice_line_items record count: {gold_invoice_line_items_count}")
 
+# COMMAND ----------
+
+# Check record counts
 print(f"Records match 1: {invoice_fact_count == gold_invoice_fact_count}")
 print(f"Records match 2: {invoice_line_items_count == gold_invoice_line_items_count}")
 
@@ -543,3 +577,217 @@ gold_invoice_fact_df.printSchema()
 # Check schema of the gold invoice_line_items table with DiscountID
 print("Gold Invoice Line Items Schema:")
 gold_invoice_line_items_df.printSchema()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Analysis
+
+# COMMAND ----------
+
+# Get Gold Discounts Data Path
+gold_discounts_path = get_gold_path("discounts")
+
+# Read the Gold Discounts Data
+tmp_gold_discounts_df = spark.read.format(file_format).load(gold_discounts_path)
+
+# Create a new DataFrame from the RDD with the schema to ensure nullable properties are respected
+gold_discounts_df = spark.createDataFrame(tmp_gold_discounts_df.rdd, discounts_schema2)
+
+# COMMAND ----------
+
+# Register Tables as Temporary Views for SQL Operations
+gold_invoice_line_items_df.createOrReplaceTempView("final_invoice_line_items")
+gold_discounts_df.createOrReplaceTempView("discounts")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyze Records with and without Discounts
+
+# COMMAND ----------
+
+# Display count of records with and without discounts
+print("Transactions Summary:")
+summary_df = spark.sql("""
+SELECT
+    TransactionType,
+    CASE 
+        WHEN Discount > 0 THEN 'Discounted' 
+        ELSE 'Regular Price'
+    END AS PriceType,
+    CASE 
+        WHEN DiscountID IS NOT NULL THEN 'With DiscountID' 
+        WHEN Discount > 0 AND DiscountID IS NULL THEN 'Missing DiscountID'
+        ELSE 'No DiscountID Required'
+    END AS DiscountIDStatus,
+    COUNT(*) AS RecordCount
+FROM
+    final_invoice_line_items
+GROUP BY
+    TransactionType,
+    CASE 
+        WHEN Discount > 0 THEN 'Discounted' 
+        ELSE 'Regular Price'
+    END,
+    CASE 
+        WHEN DiscountID IS NOT NULL THEN 'With DiscountID' 
+        WHEN Discount > 0 AND DiscountID IS NULL THEN 'Missing DiscountID'
+        ELSE 'No DiscountID Required'
+    END
+ORDER BY
+    TransactionType,
+    PriceType,
+    DiscountIDStatus
+""")
+display(summary_df)
+
+# COMMAND ----------
+
+# Create a summary of discount usage to validate
+print("Discount Usage Summary:")
+spark.sql("""
+SELECT 
+    d.DiscountID,
+    d.StartDate,
+    d.EndDate,
+    d.Discount,
+    d.Category,
+    d.SubCategory,
+    COUNT(t.InvoiceID) AS TransactionCount,
+    SUM(t.LineTotalUSD) AS TotalSales
+FROM 
+    discounts d
+LEFT JOIN 
+    final_invoice_line_items t ON d.DiscountID = t.DiscountID
+GROUP BY 
+    d.DiscountID, d.StartDate, d.EndDate, d.Discount, d.Category, d.SubCategory
+ORDER BY 
+    TransactionCount DESC
+""").show(10)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Calculate Overall Margin Metrics
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Calculate overall margin metrics
+# MAGIC SELECT 
+# MAGIC     'All Sales' AS Category,
+# MAGIC     COUNT(*) AS LineItemCount,
+# MAGIC     ROUND(SUM(LineTotalUSD), 2) AS TotalRevenue,
+# MAGIC     ROUND(SUM(TotalProductionCost), 2) AS TotalCost,
+# MAGIC     ROUND(SUM(ContributionMargin), 2) AS TotalMargin,
+# MAGIC     ROUND((SUM(ContributionMargin) / SUM(LineTotalUSD)) * 100, 2) AS OverallMarginPercentage
+# MAGIC FROM 
+# MAGIC     final_invoice_line_items
+# MAGIC WHERE 
+# MAGIC     TransactionType = 'Sale'
+# MAGIC     AND LineTotalUSD > 0
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyze Contribution Margin by Product Category
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Analyze contribution margin by product category
+# MAGIC SELECT 
+# MAGIC     Category,
+# MAGIC     COUNT(*) AS LineItemCount,
+# MAGIC     ROUND(SUM(LineTotalUSD), 2) AS TotalRevenue,
+# MAGIC     ROUND(SUM(TotalProductionCost), 2) AS TotalCost,
+# MAGIC     ROUND(SUM(ContributionMargin), 2) AS TotalMargin,
+# MAGIC     ROUND((SUM(ContributionMargin) / SUM(LineTotalUSD)) * 100, 2) AS CategoryMarginPercentage
+# MAGIC FROM 
+# MAGIC     final_invoice_line_items
+# MAGIC WHERE 
+# MAGIC     TransactionType = 'Sale'
+# MAGIC     AND LineTotalUSD > 0
+# MAGIC GROUP BY 
+# MAGIC     Category
+# MAGIC ORDER BY 
+# MAGIC     TotalMargin DESC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyze contribution margin by discount usage
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Analyze contribution margin by discount usage
+# MAGIC SELECT 
+# MAGIC     CASE 
+# MAGIC         WHEN DiscountID IS NOT NULL THEN 'Discounted'
+# MAGIC         ELSE 'Regular Price'
+# MAGIC     END AS PriceType,
+# MAGIC     COUNT(*) AS LineItemCount,
+# MAGIC     ROUND(SUM(LineTotalUSD), 2) AS TotalRevenue,
+# MAGIC     ROUND(SUM(TotalProductionCost), 2) AS TotalCost,
+# MAGIC     ROUND(SUM(ContributionMargin), 2) AS TotalMargin,
+# MAGIC     ROUND((SUM(ContributionMargin) / SUM(LineTotalUSD)) * 100, 2) AS MarginPercentage
+# MAGIC FROM 
+# MAGIC     final_invoice_line_items
+# MAGIC WHERE 
+# MAGIC     TransactionType = 'Sale'
+# MAGIC     AND LineTotalUSD > 0
+# MAGIC GROUP BY 
+# MAGIC     CASE 
+# MAGIC         WHEN DiscountID IS NOT NULL THEN 'Discounted'
+# MAGIC         ELSE 'Regular Price'
+# MAGIC     END
+# MAGIC ORDER BY 
+# MAGIC     MarginPercentage DESC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Verify Distribution of Contribution Margin Percentages
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Verify distribution of contribution margin percentages
+# MAGIC SELECT 
+# MAGIC     CASE 
+# MAGIC         WHEN ContributionMarginPercentage < 0 THEN 'Negative Margin'
+# MAGIC         WHEN ContributionMarginPercentage < 20 THEN 'Low (0-20%)'
+# MAGIC         WHEN ContributionMarginPercentage < 40 THEN 'Medium (20-40%)'
+# MAGIC         WHEN ContributionMarginPercentage < 60 THEN 'Good (40-60%)'
+# MAGIC         WHEN ContributionMarginPercentage < 80 THEN 'High (60-80%)'
+# MAGIC         ELSE 'Very High (80%+)'
+# MAGIC     END AS MarginBucket,
+# MAGIC     COUNT(*) AS LineItemCount,
+# MAGIC     ROUND(SUM(LineTotalUSD), 2) AS TotalRevenue,
+# MAGIC     ROUND(AVG(ContributionMarginPercentage), 2) AS AvgMarginPercentage
+# MAGIC FROM 
+# MAGIC     final_invoice_line_items
+# MAGIC WHERE 
+# MAGIC     TransactionType = 'Sale'
+# MAGIC     AND LineTotalUSD > 0
+# MAGIC     AND ContributionMarginPercentage IS NOT NULL
+# MAGIC GROUP BY 
+# MAGIC     CASE 
+# MAGIC         WHEN ContributionMarginPercentage < 0 THEN 'Negative Margin'
+# MAGIC         WHEN ContributionMarginPercentage < 20 THEN 'Low (0-20%)'
+# MAGIC         WHEN ContributionMarginPercentage < 40 THEN 'Medium (20-40%)'
+# MAGIC         WHEN ContributionMarginPercentage < 60 THEN 'Good (40-60%)'
+# MAGIC         WHEN ContributionMarginPercentage < 80 THEN 'High (60-80%)'
+# MAGIC         ELSE 'Very High (80%+)'
+# MAGIC     END
+# MAGIC ORDER BY 
+# MAGIC     CASE 
+# MAGIC         WHEN MarginBucket = 'Negative Margin' THEN 1
+# MAGIC         WHEN MarginBucket = 'Low (0-20%)' THEN 2
+# MAGIC         WHEN MarginBucket = 'Medium (20-40%)' THEN 3
+# MAGIC         WHEN MarginBucket = 'Good (40-60%)' THEN 4
+# MAGIC         WHEN MarginBucket = 'High (60-80%)' THEN 5
+# MAGIC         ELSE 6
+# MAGIC     END

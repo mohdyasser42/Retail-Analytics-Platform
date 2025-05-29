@@ -41,9 +41,9 @@
 
 # Input and output paths using mount points
 silver_customers_path = get_silver_path("customers")
-gold_invoice_fact_path = get_gold_path("invoice_fact")
 gold_invoice_line_items_path = get_gold_path("invoice_line_items")
 gold_customers_path = get_gold_path("customers")
+gold_segment_metrics_path = get_gold_path("segment_metrics")
 
 # COMMAND ----------
 
@@ -69,6 +69,7 @@ print(f"Write mode: {write_mode}, File format: {file_format}")
 from pyspark.sql.functions import col, count, when, lit, sum, avg, countDistinct, datediff, current_date, year, to_date, floor
 from pyspark.sql import functions as F
 from pyspark.sql.types import BooleanType, DecimalType, IntegerType
+from dateutil.relativedelta import relativedelta
 
 # COMMAND ----------
 
@@ -79,19 +80,19 @@ customers_df = spark.createDataFrame(tmp_customers_df.rdd, customers_schema)
 customers_df.cache()
 print(f"Loaded {customers_df.count()} customer records")
 
-# Load Gold layer invoice_fact data
-print(f"\nLoading Gold Invoice Fact Data...")
-tmp_invoice_fact_df = spark.read.format(file_format).load(gold_invoice_fact_path)
-invoice_fact_df = spark.createDataFrame(tmp_invoice_fact_df.rdd, invoice_fact_schema)
-invoice_fact_df.cache()
-print(f"Loaded {invoice_fact_df.count()} invoice records")
-
 # Load Gold layer invoice_line_items data
 print(f"\nLoading Gold Invoice Line Items Data...")
 tmp_invoice_line_items_df = spark.read.format(file_format).load(gold_invoice_line_items_path)
 invoice_line_items_df = spark.createDataFrame(tmp_invoice_line_items_df.rdd, invoice_line_items_schema)
 invoice_line_items_df.cache()
 print(f"Loaded {invoice_line_items_df.count()} invoice records")
+
+# COMMAND ----------
+
+tmp_customers_df = spark.read.format(file_format).load(silver_customers_path)
+customers_df = spark.createDataFrame(tmp_customers_df.rdd, customers_schema)
+customers_df.cache()
+print(f"Loaded {customers_df.count()} customer records")
 
 # COMMAND ----------
 
@@ -123,11 +124,30 @@ print(f"Customers with NULL DateOfBirth: {null_dob_count}")
 
 # COMMAND ----------
 
+# Find max date from invoice_line_items
+max_date = invoice_line_items_df.agg({"date": "max"}).collect()[0][0]
+print(f"Max date from invoice_line_items: {max_date}")
+
+# COMMAND ----------
+
+last_date = (max_date.replace(day=1) + relativedelta(months=1))
+print(f"First date of the next month of the last Transaction: {last_date}")
+
+# COMMAND ----------
+
+# Convert last_date to appropriate date format
+last_date_str = last_date.strftime("%Y-%m-%d")
+print(f"Formatted last_date: {last_date_str}")
+
+# COMMAND ----------
+
 # Add age calculation to customers dataframe
 customers_df_with_age = customers_df.withColumn(
     "Age", 
-    floor(datediff(current_date(), to_date("DateOfBirth", "yyyy-MM-dd")) / 365.25)
+    floor(datediff(lit(last_date_str), to_date("DateOfBirth", "yyyy-MM-dd")) / 365.25)
 )
+
+display(customers_df_with_age.limit(5))
 
 # COMMAND ----------
 
@@ -168,7 +188,6 @@ display(customers_df.groupBy("AgeGroup").count().orderBy("AgeGroup"))
 
 # Register tables as temporary views for SQL operations
 customers_df.createOrReplaceTempView("customers")
-invoice_fact_df.createOrReplaceTempView("invoice_fact")
 invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 
 # COMMAND ----------
@@ -187,7 +206,7 @@ invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 # MAGIC     FROM 
 # MAGIC         invoice_line_items
 # MAGIC     WHERE 
-# MAGIC         Category = 'Children' AND InvoiceID LIKE 'INV%'
+# MAGIC         Category = 'Children' AND TransactionType = 'Sale'
 # MAGIC     GROUP BY 
 # MAGIC         CustomerID
 # MAGIC     HAVING 
@@ -200,13 +219,13 @@ invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 # MAGIC CREATE OR REPLACE TEMPORARY VIEW customer_spending AS
 # MAGIC SELECT 
 # MAGIC     CustomerID,
-# MAGIC     SUM(InvoiceTotalUSD) AS TotalSpending,
+# MAGIC     SUM(LineTotalUSD) AS TotalSpending,
 # MAGIC     COUNT(DISTINCT InvoiceID) AS NoOfInvoices,
-# MAGIC     CAST(SUM(InvoiceTotalUSD) / COUNT(DISTINCT InvoiceID) AS DECIMAL(10,4)) AS AverageSpending
+# MAGIC     CAST(SUM(LineTotalUSD) / COUNT(DISTINCT InvoiceID) AS DECIMAL(10,4)) AS AverageSpending
 # MAGIC FROM 
-# MAGIC     invoice_fact
+# MAGIC     invoice_line_items
 # MAGIC WHERE 
-# MAGIC     InvoiceID LIKE 'INV%'  -- Only include actual sales invoices, not returns
+# MAGIC     TransactionType = 'Sale'  -- Only include actual sales invoices, not returns
 # MAGIC GROUP BY 
 # MAGIC     CustomerID
 
@@ -258,25 +277,6 @@ gold_customers_df.select("TotalSpending","NoOfInvoices","AverageSpending").summa
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Analyze Customer Age vs. Spending Patterns
-
-# COMMAND ----------
-
-# Analyze spending by age group
-age_spending_analysis = gold_customers_df.groupBy("AgeGroup") \
-    .agg(
-        F.count("CustomerID").alias("CustomerCount"),
-        F.round(F.sum("TotalSpending"), 2).alias("TotalRevenue"),
-        F.round(F.avg("TotalSpending"), 2).alias("AvgRevenuePerCustomer"),
-        F.round(F.avg("AverageSpending"), 2).alias("AvgOrderValue")
-    ) \
-    .orderBy("AgeGroup")
-
-display(age_spending_analysis)
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## RFM Analysis (Recency, Frequency, Monetary) for Customer Segmentation
 
 # COMMAND ----------
@@ -288,7 +288,7 @@ display(age_spending_analysis)
 
 # Register tables as temporary views for SQL operations
 gold_customers_df.createOrReplaceTempView("gold_customers")
-invoice_fact_df.createOrReplaceTempView("gold_invoice_fact")
+invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 
 # COMMAND ----------
 
@@ -299,7 +299,7 @@ invoice_fact_df.createOrReplaceTempView("gold_invoice_fact")
 # MAGIC     CustomerID,
 # MAGIC     MAX(Date) AS LastPurchaseDate
 # MAGIC FROM 
-# MAGIC     gold_invoice_fact
+# MAGIC     invoice_line_items
 # MAGIC WHERE 
 # MAGIC     TransactionType = 'Sale'
 # MAGIC GROUP BY 
@@ -307,17 +307,13 @@ invoice_fact_df.createOrReplaceTempView("gold_invoice_fact")
 
 # COMMAND ----------
 
-# Use a Particular Date for Recency Calculation
-current_date = "2025-05-14"
-
-# COMMAND ----------
-
 # MAGIC %sql
 # MAGIC -- Calculate RFM metrics
+# MAGIC -- Using the value of last_date_str to calculate the recency metric
 # MAGIC CREATE OR REPLACE TEMPORARY VIEW customer_rfm AS
 # MAGIC SELECT 
 # MAGIC     c.CustomerID,
-# MAGIC     DATEDIFF('2025-05-14', COALESCE(lp.LastPurchaseDate, '2025-05-14')) AS Recency,
+# MAGIC     DATEDIFF('2025-04-01', COALESCE(lp.LastPurchaseDate, '2025-04-01')) AS Recency,
 # MAGIC     c.NoOfInvoices AS Frequency,
 # MAGIC     c.TotalSpending AS Monetary
 # MAGIC FROM 
@@ -357,13 +353,13 @@ rfm_df = rfm_df.withColumn("RFM_Score",
 rfm_segments_df = rfm_df.withColumn(
     "RFM_Segment",
     F.when((F.col("R_Score") >= 4) & (F.col("F_Score") >= 4) & (F.col("M_Score") >= 4), "Champions")
-    .when((F.col("R_Score") >= 3) & (F.col("F_Score") >= 3) & (F.col("M_Score") >= 3), "Loyal Customers")
+    .when((F.col("R_Score") >= 3) & (F.col("F_Score") >= 3) & (F.col("M_Score") >= 3), "Loyal")
     .when((F.col("R_Score") >= 4) & (F.col("F_Score") >= 3) & (F.col("M_Score") < 3), "Potential Loyalists")
     .when((F.col("R_Score") >= 3) & (F.col("F_Score") < 3) & (F.col("M_Score") >= 3), "Big Spenders")
     .when((F.col("R_Score") < 2) & (F.col("F_Score") >= 4) & (F.col("M_Score") >= 4), "At Risk")
     .when((F.col("R_Score") < 2) & (F.col("F_Score") >= 3) & (F.col("M_Score") < 3), "Need Attention")
     .when((F.col("R_Score") < 2) & (F.col("F_Score") < 3) & (F.col("M_Score") < 3), "About to Leave")
-    .when((F.col("R_Score") >= 4) & (F.col("F_Score") < 2) & (F.col("M_Score") < 2), "New Customers")
+    .when((F.col("R_Score") >= 4) & (F.col("F_Score") < 2) & (F.col("M_Score") < 2), "New")
     .when((F.col("R_Score") < 3) & (F.col("F_Score") < 3) & (F.col("M_Score") >= 3), "High Value Prospects")
     .otherwise("Others")
 )
@@ -381,7 +377,7 @@ display(rfm_segments_df.limit(10))
 
 # COMMAND ----------
 
-gold_customers_df = gold_customers_df.join(rfm_segments_df.select("CustomerID", "RFM_Segment"), on="CustomerID", how="left")
+gold_customers_df = gold_customers_df.join(rfm_segments_df.select("CustomerID", "RFM_Segment", "Recency" ), on="CustomerID", how="left")
 gold_customers_df.cache()
 gold_customers_count = gold_customers_df.count()
 
@@ -426,6 +422,7 @@ tmp_gold_customers_df = spark.read.format(file_format).load(gold_customers_path)
 
 # Create a new DataFrame from the RDD with the schema to ensure nullable properties are respected
 gold_customers_verify_df = spark.createDataFrame(tmp_gold_customers_df.rdd, gold_customers_schema)
+gold_customers_verify_df.cache()
 
 # Compare record counts
 gold_customers_verify_count = gold_customers_verify_df.count()
@@ -441,3 +438,127 @@ display(gold_customers_verify_df.limit(10))
 
 # Display final schema
 gold_customers_verify_df.printSchema()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Analysis
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyze Customer Age vs. Spending Patterns
+
+# COMMAND ----------
+
+gold_customers_verify_df.createOrReplaceTempView("customer_segments")
+
+# COMMAND ----------
+
+# Analyze spending by age group
+age_spending_analysis = gold_customers_verify_df.groupBy("AgeGroup") \
+    .agg(
+        F.count("CustomerID").alias("CustomerCount"),
+        F.round(F.sum("TotalSpending"), 2).alias("TotalRevenue"),
+        F.round(F.avg("TotalSpending"), 2).alias("AvgRevenuePerCustomer"),
+        F.round(F.avg("AverageSpending"), 2).alias("AvgOrderValue")
+    ) \
+    .orderBy("AgeGroup")
+
+display(age_spending_analysis)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Segment Analysis by Age Group
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Segment analysis by age group
+# MAGIC SELECT 
+# MAGIC     AgeGroup,
+# MAGIC     RFM_Segment,
+# MAGIC     COUNT(*) AS CustomerCount,
+# MAGIC     ROUND(AVG(TotalSpending), 2) AS AvgSpending,
+# MAGIC     ROUND(AVG(NoOfInvoices), 2) AS AvgPurchases
+# MAGIC FROM 
+# MAGIC     customer_segments
+# MAGIC GROUP BY 
+# MAGIC     AgeGroup, RFM_Segment
+# MAGIC ORDER BY 
+# MAGIC     AgeGroup, AvgSpending DESC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Segment analysis by country
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Segment analysis by country
+# MAGIC SELECT 
+# MAGIC     Country,
+# MAGIC     RFM_Segment,
+# MAGIC     COUNT(*) AS CustomerCount,
+# MAGIC     ROUND(SUM(TotalSpending), 2) AS TotalRevenue,
+# MAGIC     ROUND(AVG(TotalSpending), 2) AS AvgSpending
+# MAGIC FROM 
+# MAGIC     customer_segments
+# MAGIC GROUP BY 
+# MAGIC     Country, RFM_Segment
+# MAGIC ORDER BY 
+# MAGIC     Country, TotalRevenue DESC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyze metrics by segment
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Analyze metrics by segment
+# MAGIC CREATE OR REPLACE TEMP VIEW segment_metrics AS
+# MAGIC SELECT 
+# MAGIC     RFM_Segment,
+# MAGIC     COUNT(*) AS CustomerCount,
+# MAGIC     ROUND(SUM(TotalSpending), 2) AS TotalRevenue,
+# MAGIC     ROUND(100 * SUM(TotalSpending) / (SELECT SUM(TotalSpending) FROM customer_segments), 2) AS RevenuePercentage,
+# MAGIC     ROUND(AVG(Recency), 0) AS AvgDaysSinceLastPurchase,
+# MAGIC     ROUND(AVG(NoOfInvoices), 1) AS AvgPurchaseCount,
+# MAGIC     ROUND(AVG(AverageSpending), 2) AS AvgOrderValue,
+# MAGIC     ROUND(100 * SUM(CASE WHEN IsParent THEN 1 ELSE 0 END) / COUNT(*), 1) AS ParentPercentage
+# MAGIC FROM 
+# MAGIC     customer_segments
+# MAGIC GROUP BY 
+# MAGIC     RFM_Segment
+# MAGIC ORDER BY 
+# MAGIC     TotalRevenue DESC;
+
+# COMMAND ----------
+
+# Save the result in a DataFrame
+segment_metrics_df = spark.sql("SELECT * FROM segment_metrics")
+segment_metrics_df.cache()
+segment_metrics_count = segment_metrics_df.count()
+display(segment_metrics_df)
+
+# COMMAND ----------
+
+# Save as Delta format in the Gold Layer
+print(f"Writing {segment_metrics_count} records to Gold Layer: {gold_segment_metrics_path}")
+
+# Delete existing Delta files
+dbutils.fs.rm(gold_segment_metrics_path, recurse=True)
+
+# Apply Delta optimizations
+segment_metrics_df.coalesce(1) \
+    .write \
+    .format(file_format) \
+    .mode(write_mode) \
+    .options(**DELTA_OPTIONS) \
+    .save(gold_segment_metrics_path)
+
+print(f"Successfully wrote records to Gold Layer: {gold_segment_metrics_path}")

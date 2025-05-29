@@ -40,7 +40,7 @@
 
 # Input and output paths using mount points
 silver_stores_path = get_silver_path("stores")
-gold_invoice_fact_path = get_gold_path("invoice_fact")
+gold_invoice_line_items_path = get_gold_path("invoice_line_items")
 gold_stores_path = get_gold_path("stores")
 
 # COMMAND ----------
@@ -51,7 +51,7 @@ file_format = FILE_FORMATS["gold"]
 
 print(f"Processing Stores Data:")
 print(f"- Stores Source: {silver_stores_path}")
-print(f"- Invoice Fact Source: {gold_invoice_fact_path}")
+print(f"- Invoice Line Items Source: {gold_invoice_line_items_path}")
 print(f"- Destination: {gold_stores_path}")
 print(f"Write mode: {write_mode}, File format: {file_format}")
 
@@ -76,12 +76,12 @@ stores_df = spark.createDataFrame(tmp_stores_df.rdd, stores_schema)
 stores_df.cache()
 print(f"Loaded {stores_df.count()} store records")
 
-# Load Gold layer invoice_fact data
-print(f"\nLoading Gold Invoice Fact Data...")
-tmp_invoice_fact_df = spark.read.format(file_format).load(gold_invoice_fact_path)
-invoice_fact_df = spark.createDataFrame(tmp_invoice_fact_df.rdd, invoice_fact_schema)
-invoice_fact_df.cache()
-print(f"Loaded {invoice_fact_df.count()} invoice records")
+# Load Gold layer invoice_line_items data
+print(f"\nLoading Gold Invoice Line Items Data...")
+tmp_invoice_line_items_df = spark.read.format(file_format).load(gold_invoice_line_items_path)
+invoice_line_items_df = spark.createDataFrame(tmp_invoice_line_items_df.rdd, invoice_line_items_schema)
+invoice_line_items_df.cache()
+print(f"Loaded {invoice_line_items_df.count()} invoice records")
 
 # COMMAND ----------
 
@@ -109,7 +109,7 @@ stores_df.printSchema()
 
 # Register tables as temporary views for SQL operations
 stores_df.createOrReplaceTempView("stores")
-invoice_fact_df.createOrReplaceTempView("invoice_fact")
+invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 
 # COMMAND ----------
 
@@ -124,7 +124,7 @@ invoice_fact_df.createOrReplaceTempView("invoice_fact")
 # MAGIC SELECT 
 # MAGIC     f.StoreID,
 # MAGIC     -- Total sales (USD) for sales transactions only
-# MAGIC     SUM(CASE WHEN f.TransactionType = 'Sale' THEN f.InvoiceTotalUSD ELSE 0 END) AS TotalSalesUSD,
+# MAGIC     SUM(CASE WHEN f.TransactionType = 'Sale' THEN f.LineTotalUSD ELSE 0 END) AS TotalSalesUSD,
 # MAGIC     
 # MAGIC     -- Count of distinct sales invoices
 # MAGIC     COUNT(DISTINCT CASE WHEN f.TransactionType = 'Sale' THEN f.InvoiceID END) AS TotalTransactions,
@@ -133,7 +133,7 @@ invoice_fact_df.createOrReplaceTempView("invoice_fact")
 # MAGIC     COUNT(DISTINCT CASE WHEN f.TransactionType = 'Return' THEN f.InvoiceID END) AS TotalReturns,
 # MAGIC
 # MAGIC     -- Total returns (USD) for returns transactions only
-# MAGIC     SUM(CASE WHEN f.TransactionType = 'Return' THEN ABS(f.InvoiceTotalUSD) ELSE 0 END) AS TotalReturnsUSD,
+# MAGIC     SUM(CASE WHEN f.TransactionType = 'Return' THEN ABS(f.LineTotalUSD) ELSE 0 END) AS TotalReturnsUSD,
 # MAGIC     
 # MAGIC     -- Min and Max dates to calculate operating period
 # MAGIC     MIN(f.Date) AS FirstTransactionDate,
@@ -142,7 +142,7 @@ invoice_fact_df.createOrReplaceTempView("invoice_fact")
 # MAGIC     -- Count of distinct months with transactions for monthly average calculation
 # MAGIC     COUNT(DISTINCT DATE_FORMAT(f.Date, 'yyyy-MM')) AS MonthsWithTransactions
 # MAGIC FROM 
-# MAGIC     invoice_fact f
+# MAGIC     invoice_line_items f
 # MAGIC GROUP BY 
 # MAGIC     f.StoreID
 
@@ -205,49 +205,6 @@ display(gold_stores_df)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Additional Store Performance Analysis
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Create summary of store performance by country
-# MAGIC SELECT 
-# MAGIC     Country,
-# MAGIC     COUNT(*) AS StoreCount,
-# MAGIC     ROUND(SUM(TotalSalesUSD), 2) AS CountryTotalSales,
-# MAGIC     ROUND(AVG(TotalSalesUSD), 2) AS AvgStoreRevenue,
-# MAGIC     ROUND(AVG(AverageMonthlyUSD), 2) AS AvgMonthlyRevenue,
-# MAGIC     ROUND(AVG(ReturnRate), 2) AS AvgReturnRate
-# MAGIC FROM 
-# MAGIC     gold_stores
-# MAGIC GROUP BY 
-# MAGIC     Country
-# MAGIC ORDER BY 
-# MAGIC     CountryTotalSales DESC
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Identify top performing stores
-# MAGIC SELECT 
-# MAGIC     StoreID,
-# MAGIC     StoreName,
-# MAGIC     City,
-# MAGIC     Country,
-# MAGIC     TotalSalesUSD,
-# MAGIC     AverageMonthlyUSD,
-# MAGIC     TotalTransactions,
-# MAGIC     NumberOfEmployees,
-# MAGIC     ReturnRate
-# MAGIC FROM 
-# MAGIC     gold_stores
-# MAGIC ORDER BY 
-# MAGIC     TotalSalesUSD DESC
-# MAGIC LIMIT 10
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Write to Gold Layer
 # MAGIC Save the enriched Store Data to the Gold Layer.
 
@@ -303,8 +260,31 @@ gold_stores_verify_df.select("TotalSalesUSD", "AverageMonthlyUSD", "TotalTransac
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Analysis
+
+# COMMAND ----------
+
 # Create a view for final reporting and visualization
 gold_stores_verify_df.createOrReplaceTempView("gold_stores_final")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Create summary of store performance by country
+# MAGIC SELECT 
+# MAGIC     Country,
+# MAGIC     COUNT(*) AS StoreCount,
+# MAGIC     ROUND(SUM(TotalSalesUSD), 2) AS CountryTotalSales,
+# MAGIC     ROUND(AVG(TotalSalesUSD), 2) AS AvgStoreRevenue,
+# MAGIC     ROUND(AVG(AverageMonthlyUSD), 2) AS AvgMonthlyRevenue,
+# MAGIC     ROUND(AVG(ReturnRate), 2) AS AvgReturnRate
+# MAGIC FROM 
+# MAGIC     gold_stores_final
+# MAGIC GROUP BY 
+# MAGIC     Country
+# MAGIC ORDER BY 
+# MAGIC     CountryTotalSales DESC
 
 # COMMAND ----------
 
@@ -326,3 +306,23 @@ gold_stores_verify_df.createOrReplaceTempView("gold_stores_final")
 # MAGIC     gold_stores_final
 # MAGIC ORDER BY 
 # MAGIC     SalesRank
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Identify Under performing stores
+# MAGIC SELECT 
+# MAGIC     StoreID,
+# MAGIC     StoreName,
+# MAGIC     City,
+# MAGIC     Country,
+# MAGIC     TotalSalesUSD,
+# MAGIC     AverageMonthlyUSD,
+# MAGIC     TotalTransactions,
+# MAGIC     NumberOfEmployees,
+# MAGIC     ReturnRate
+# MAGIC FROM 
+# MAGIC     gold_stores_final
+# MAGIC ORDER BY 
+# MAGIC     TotalSalesUSD ASC
+# MAGIC LIMIT 10

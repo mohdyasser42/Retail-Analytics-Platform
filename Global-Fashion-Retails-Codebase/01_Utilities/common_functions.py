@@ -354,7 +354,8 @@ def fetch_exchange_rates(apikey, path, start_date="2023-01-01", end_date="2025-0
         exchange_rates_df = spark.createDataFrame(sample_data, schema=exchange_rate_schema)
     
     # Save exchange rates to Delta
-    exchange_rates_df.write.format("delta") \
+    exchange_rates_df.coalesce(1) \
+        .write.format("delta") \
         .mode("overwrite") \
         .option("overwriteSchema", "true") \
         .save(path)

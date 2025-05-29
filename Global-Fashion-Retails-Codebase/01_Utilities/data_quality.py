@@ -163,7 +163,11 @@ invoice_line_items_schema = StructType([
     StructField("Date", DateType(), True),
     StructField("TransactionType", StringType(), True),
     StructField("LineTotal", DecimalType(10, 4), True),
-    StructField("LineTotal", DecimalType(10, 4), True)
+    StructField("LineTotalUSD", DecimalType(10, 4), True),
+    StructField("ProductionCost", DecimalType(10, 4), True),
+    StructField("TotalProductionCost", DecimalType(10, 4), True),
+    StructField("ContributionMargin", DecimalType(10, 4), True),
+     StructField("ContributionMarginPercentage", DecimalType(10, 2), True),
 ])
 
 # Customers Schema
@@ -183,7 +187,8 @@ gold_customers_schema = StructType([
     StructField("TotalSpending", DecimalType(20, 4), True),
     StructField("NoOfInvoices", IntegerType(), True),
     StructField("AverageSpending", DecimalType(14, 4), True),
-    StructField("RFM_Segment", StringType(), True)
+    StructField("RFM_Segment", StringType(), True),
+    StructField("Recency", IntegerType(), True)
 ])
 
 gold_stores_schema = StructType([
