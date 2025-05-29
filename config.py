@@ -13,7 +13,6 @@ import io
 # Get 
 @st.cache_resource
 def get_client_secret():
-    keyVaultName = "gfr-key-vault"
     KVUri = f"https://gfr-key-vault.vault.azure.net/"
     secretName = "db-client-secret"
 
@@ -28,8 +27,8 @@ def get_client_secret():
     )
     client = SecretClient(vault_url=KVUri, credential=secretcredential)
     retrieved_secret = client.get_secret(secretName)
-    return retrieved_secret
-
+    secret_value = retrieved_secret.value
+    return secret_value
 
 # Authentication configuration
 @st.cache_resource
@@ -37,7 +36,9 @@ def get_credentials():
     # Method 1: Service Principal authentication (most secure)
     tenant_id = st.secrets["azure_credentials"]["tenant_id"]
     client_id = st.secrets["azure_credentials"]["client_id"]
-    client_secret = st.secrets["azure_credentials"]["client_secret"]
+    # client_secret = st.secrets["azure_credentials"]["client_secret"]
+    client_secret = get_client_secret()
+
     
     credential = ClientSecretCredential(
         tenant_id=tenant_id,
