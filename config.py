@@ -6,7 +6,22 @@ import pyarrow.parquet as pq
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 from urllib.parse import quote
+from azure.keyvault.secrets import SecretClient
+from azure.identity import DefaultAzureCredential
+import os
 import io
+
+# Get 
+@st.cache_resource
+def get_client_secret():
+    keyVaultName = "gfr-key-vault"
+    KVUri = f"https://gfr-key-vault.vault.azure.net/"
+    secretName = "db-client-secret"
+
+    credential = DefaultAzureCredential()
+    client = SecretClient(vault_url=KVUri, credential=credential)
+    retrieved_secret = client.get_secret(secretName)
+    return retrieved_secret
 
 
 # Authentication configuration
