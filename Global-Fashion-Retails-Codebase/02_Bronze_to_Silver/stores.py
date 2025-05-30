@@ -6,8 +6,9 @@
 # MAGIC - Identification of null values and duplicate records
 # MAGIC - Verification of Store ID uniqueness
 # MAGIC - Translation of city, country, and store names to English
-# MAGIC - Standardization of text fields with consistent formatting conventions
+# MAGIC - Standardization of text fields with consistent formatting
 # MAGIC - Cross-validation of employee counts against the employees dataset
+# MAGIC - Saving the Cleaned and Enriched Stores Data to the Silver Layer
 
 # COMMAND ----------
 
@@ -308,12 +309,3 @@ display(silver_stores_df.limit(5))
 # COMMAND ----------
 
 silver_stores_df.printSchema()
-
-# COMMAND ----------
-
-mount_path = "/mnt/data"
-save_dataframe_to_csv(
-    df=stores_df,
-    adls_path=f"/mnt/global_fashion/silver/processed",
-    filename="stores"
-)

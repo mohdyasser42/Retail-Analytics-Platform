@@ -5,7 +5,9 @@
 # MAGIC This Pipeline processes the raw transactions dataset through comprehensive cleansing, and standardization, including:
 # MAGIC
 # MAGIC - Identification of null values and duplicate records
+# MAGIC - Standardization of Color and Size Fields with Consistent Default Values
 # MAGIC - Standardization of text fields through consistent formatting
+# MAGIC - Saving the Cleaned and Enriched Transactions Data to the Silver Layer
 
 # COMMAND ----------
 
@@ -73,7 +75,10 @@ tmp_transactions_df = spark.read.format("csv") \
 # Create a new DataFrame from the RDD with the schema to ensure nullable properties are respected
 transactions_df = spark.createDataFrame(tmp_transactions_df.rdd, transactions_schema)
 
-print(f"Loaded {transactions_df.count()} Transactions Data")
+transactions_df.cache()
+transactions_count = transactions_df.count()
+
+print(f"Loaded {transactions_count} Transactions Data")
 
 # COMMAND ----------
 
@@ -131,7 +136,7 @@ else:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Standardization of Color, Size Fields with Consistent Default Values
+# MAGIC ## Standardization of Color and Size Fields with Consistent Default Values
 
 # COMMAND ----------
 
@@ -170,23 +175,19 @@ print("Transactions Data Cleaning Pipeline Complete")
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Write to Silver Layer
-# MAGIC Save the Cleaned and Enriched Employees Data to the Silver Layer.
+trasactions_df.cache()
+transactions_count = transactions_df.count()
 
 # COMMAND ----------
 
-mount_path = "/mnt/data"
-save_dataframe_to_csv(
-    df=transactions_df,
-    adls_path=f"/mnt/global_fashion/silver/processed",
-    filename="transactions"
-)
+# MAGIC %md
+# MAGIC ## Write to Silver Layer
+# MAGIC Save the Cleaned and Enriched Transactions Data to the Silver Layer.
 
 # COMMAND ----------
 
 # Save as Delta format in the Silver Layer
-print(f"Writing {transactions_df.count()} transactions to Silver Layer: {silver_transactions_path}")
+print(f"Writing {transactions_count} transactions to Silver Layer: {silver_transactions_path}")
 
 # Delete existing Delta files
 dbutils.fs.rm(silver_transactions_path, recurse=True)
@@ -199,7 +200,7 @@ transactions_df.coalesce(1) \
     .options(**DELTA_OPTIONS) \
     .save(silver_transactions_path)
 
-print(f"Successfully wrote transactions Data to Silver Layer: {silver_transactions_path}")
+print(f"Successfully wrote {transactions_count} transactions Data to Silver Layer: {silver_transactions_path}")
 
 # COMMAND ----------
 
@@ -214,9 +215,10 @@ tmp_silver_transactions_df = spark.read.format(file_format).load(silver_transact
 
 # Create a new DataFrame from the RDD with the schema to ensure nullable properties are respected
 silver_transactions_df = spark.createDataFrame(tmp_silver_transactions_df.rdd, transactions_schema)
+silver_transactions_df.cache()
 
 # Compare record counts
-bronze_count = transactions_df.count()
+bronze_count = transactions_count
 silver_count = silver_transactions_df.count()
 
 print(f"Bronze record count: {bronze_count}")

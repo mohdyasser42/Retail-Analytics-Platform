@@ -8,7 +8,9 @@
 # MAGIC - Verification of Product ID uniqueness
 # MAGIC - Standardization of Color field with consistent default values
 # MAGIC - Recognition and handling of size-accessory relationships within product hierarchy
+# MAGIC - Replacing values in the SubCategory field
 # MAGIC - Standardization of text fields through consistent formatting
+# MAGIC - Saving the Cleaned and Enriched Products Data to the Silver Layer.
 
 # COMMAND ----------
 
@@ -199,16 +201,7 @@ print("Products Data Cleaning Pipeline Complete")
 
 # MAGIC %md
 # MAGIC ## Write to Silver Layer
-# MAGIC Save the Cleaned and Enriched Employees Data to the Silver Layer.
-
-# COMMAND ----------
-
-mount_path = "/mnt/data"
-save_dataframe_to_csv(
-    df=products_df,
-    adls_path=f"/mnt/global_fashion/silver/processed",
-    filename="products"
-)
+# MAGIC Save the Cleaned and Enriched Products Data to the Silver Layer.
 
 # COMMAND ----------
 

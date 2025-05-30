@@ -2,8 +2,7 @@
 # MAGIC %md
 # MAGIC # Data Transportation: Silver Layer to Gold Layer
 # MAGIC
-# MAGIC This Pipeline Transports Data from Silver Layer to Gold Layer:
-# MAGIC
+# MAGIC This Pipeline only Transports Data from Silver Layer to Gold Layer. No Operations were performed on these Data:
 # MAGIC - Discounts: Copying Discounts Data from Silver Layer and Saving in Gold Layer
 # MAGIC - Products: Copying Products Data from Silver Layer and Saving in Gold Layer
 # MAGIC - Employees: Copying Employees Data from Silver Layer and Saving in Gold Layer
@@ -99,6 +98,11 @@ print(f"Loaded {employees_df.count()} Employee records")
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### Discounts Data Profiling
+
+# COMMAND ----------
+
 # Display Discounts Sample Data
 display(discounts_df.limit(10))
 
@@ -110,6 +114,11 @@ discounts_df.printSchema()
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### Products Data Profiling
+
+# COMMAND ----------
+
 # Display Products Sample Data
 display(products_df.limit(10))
 
@@ -118,6 +127,11 @@ display(products_df.limit(10))
 # Display Products Data Schemas
 print("\nProducts Data Schema:")
 products_df.printSchema()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Employee Data Profiling
 
 # COMMAND ----------
 

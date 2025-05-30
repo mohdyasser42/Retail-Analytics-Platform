@@ -2,12 +2,26 @@
 # MAGIC %md
 # MAGIC # Transactions Data Transformation: Silver Layer to Gold Layer
 # MAGIC
-# MAGIC This Pipeline Enhances the Silver layer Transactions dataset and enriches it with analytical attributes:
-# MAGIC
-# MAGIC - Splits transactions into invoice_fact and invoice_line_items tables
-# MAGIC - Invoice_fact contains Invoice 
-# MAGIC - Converts currency values of InvoiceTotal column to USD using exchange rates
-# MAGIC - Adding DiscountID to invoice_line_items by matching transaction date, category, subcategory and discount value
+# MAGIC This Pipeline Enhances the Silver layer Transactions dataset and enriches it with analytical attributes and perform basic analysis:
+# MAGIC - Creating or Loading Currency Exchange Rates Data
+# MAGIC - Splitting Transactions Data into Two Different Datasets: Invoice_fact and Invoice_line_items
+# MAGIC - Extracting Invoice_fact data from Transactions data
+# MAGIC - Joining Country and City Values from Stores Data to Invoice_fact Data
+# MAGIC - Converting Currency Values of Invoice Fact Data to USD using Exchange Rates
+# MAGIC - Extracting Invoice Line Items Data from Transactions Data
+# MAGIC - Joining Category and Subcategory Values from products Data to Invoice Line Items Data
+# MAGIC - Joining Country and City Values from Stores Data to Invoice Line Items Data
+# MAGIC - Converting Currency Values of Invoice Line Items Data to USD using Exchange Rates
+# MAGIC - Assigning Discount ID for Sales Transactions with Non-Zero Discounts
+# MAGIC - Assigning Surrogate Keys for Invoice Line Items Data
+# MAGIC - Calculating Contribution Margin and Contribution Margin Percentage of each Transaction in Invoice Line Items Data
+# MAGIC - Saving the Invoice Fact and Invoice Line Items Data to the Gold Layer
+# MAGIC - Analyzing Records with and without Discounts
+# MAGIC - Analyzing Discount Usage Summary
+# MAGIC - Analyzing Overall Contribution Margin Metrics
+# MAGIC - Analyzing Contribution Margin by Product Category
+# MAGIC - Analyzing Contribution Margin by Discount Usage
+# MAGIC - Analyzing Distribution of Contribution Margin Percentages
 
 # COMMAND ----------
 
@@ -121,7 +135,7 @@ transactions_df.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Converting Currency Values to USD using Exchange Rates
+# MAGIC ## Creating or Loading Currency Exchange Rates Data
 
 # COMMAND ----------
 
@@ -142,12 +156,12 @@ except:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Splitting Transactions Data into Two Different Datasets
+# MAGIC ## Splitting Transactions Data into Two Different Datasets: Invoice_fact and Invoice_line_items
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Creating Invoice_fact Table
+# MAGIC ## Extracting Invoice Fact Data from Transactions Data
 
 # COMMAND ----------
 
@@ -170,11 +184,21 @@ invoice_fact = invoice_fact.groupBy("InvoiceID", "CustomerID", "Date", "Time", "
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Joining Country and City Values from Stores Data to Invoice Fact Data
+
+# COMMAND ----------
+
 # Selecting Country and City Columns from Stores Data
 stores_df1 = stores_df.select("StoreID", "Country", "City").withColumnRenamed("Country", "StoreCountry").withColumnRenamed("City", "StoreCity")
 
 # Join with store data to add StoreCountry and StoreCity columns
 invoice_fact = invoice_fact.join(stores_df1, on="StoreID", how="left")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Converting Currency Values of Invoice Fact Data to USD using Exchange Rates
 
 # COMMAND ----------
 
@@ -210,6 +234,7 @@ invoice_fact = invoice_fact_with_usd.select(
     "StoreCity", "EmployeeID", "TotalQuantity", "Currency", "CurrencySymbol", 
     "TransactionType", "PaymentMethod", "InvoiceTotal", "InvoiceTotalUSD"
 )
+invoice_fact.cache()
 invoice_fact_count = invoice_fact.count()
 
 # COMMAND ----------
@@ -220,12 +245,7 @@ display(invoice_fact.filter(invoice_fact.StoreCountry == 'China').limit(5))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Creating Invoice_line_items Table with Discount ID Tracking
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Step 1: Extract product category information
+# MAGIC ## Extracting Invoice Line Items Data from Transactions Data
 
 # COMMAND ----------
 
@@ -254,8 +274,20 @@ invoice_line_items = invoice_line_items.withColumn("Date", F.to_date("Timestamp"
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Joining Category and Subcategory Values from products Data to Invoice Line Items Data
+
+# COMMAND ----------
+
 # Join with product info to get Category and SubCategory
 invoice_line_items = invoice_line_items.join(products_df1, on="ProductID", how="left")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Joining Country and City Values from Stores Data to Invoice Line Items Data
+
+# COMMAND ----------
 
 # Join with store info to get Country and City
 invoice_line_items = invoice_line_items.join(stores_df2, on="StoreID", how="left")
@@ -264,6 +296,11 @@ invoice_line_items = invoice_line_items.join(stores_df2, on="StoreID", how="left
 
 invoice_line_items.cache().count()
 display(invoice_line_items.limit(5))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Converting Currency Values of Invoice Line Items Data to USD using Exchange Rates
 
 # COMMAND ----------
 
@@ -301,6 +338,11 @@ invoice_line_items = invoice_items_with_usd.select("InvoiceID", "CustomerID", "L
 
 invoice_line_items.cache().count()
 display(invoice_line_items.filter(invoice_line_items['Country'] == 'China').limit(5))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Assigning Discount ID for Sales Transactions with Non-Zero Discounts
 
 # COMMAND ----------
 
@@ -383,6 +425,11 @@ SELECT * FROM invoice_line_items_with_discount
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Assigning Surrogate Keys for Invoice Line Items Data
+
+# COMMAND ----------
+
 # Create surrogate keys for line items
 window_spec = Window.orderBy("InvoiceID", "Line")
 invoice_line_items_final = invoice_line_items_with_discount.withColumn("LineItemID", F.row_number().over(window_spec))
@@ -406,7 +453,7 @@ display(invoice_line_items.filter(col("Discount") > 0).limit(10))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Calculate Contribution Margin of each Transaction Line
+# MAGIC ## Calculating Contribution Margin and Contribution Margin Percentage of each Transaction in Invoice Line Items Data
 
 # COMMAND ----------
 
@@ -489,13 +536,13 @@ display(invoice_line_items.filter("TransactionType = 'Sale'").limit(10))
 
 # COMMAND ----------
 
-print("Transactions Data Transformation Pipeline Complete")
+print("Transactions Data Analytical Transformation Pipeline Complete")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Write to Gold Layer
-# MAGIC Save the Invoice_fact and Invoice_line_items Data to the Gold Layer.
+# MAGIC Save the Invoice Fact and Invoice Line Items Data to the Gold Layer.
 
 # COMMAND ----------
 
@@ -513,7 +560,7 @@ invoice_fact.coalesce(1) \
     .options(**DELTA_OPTIONS) \
     .save(gold_invoice_fact_path)
 
-print(f"Successfully wrote Invoice_fact Data to Gold Layer: {gold_invoice_fact_path}")
+print(f"Successfully wrote Invoice Fact Data to Gold Layer: {gold_invoice_fact_path}")
 
 # COMMAND ----------
 
@@ -531,7 +578,7 @@ invoice_line_items.coalesce(1) \
     .options(**DELTA_OPTIONS) \
     .save(gold_invoice_line_items_path)
 
-print(f"Successfully wrote Invoice_line_items Data to Gold Layer: {gold_invoice_line_items_path}")
+print(f"Successfully wrote Invoice Line Items Data to Gold Layer: {gold_invoice_line_items_path}")
 
 # COMMAND ----------
 
@@ -568,20 +615,20 @@ print(f"Records match 2: {invoice_line_items_count == gold_invoice_line_items_co
 
 # COMMAND ----------
 
-# Check schema of the gold invoice_fact table
+# Check schema of the gold Invoice Fact table
 print("Gold Invoice Fact Schema:")
 gold_invoice_fact_df.printSchema()
 
 # COMMAND ----------
 
-# Check schema of the gold invoice_line_items table with DiscountID
+# Check schema of the gold Invoice Line Items table
 print("Gold Invoice Line Items Schema:")
 gold_invoice_line_items_df.printSchema()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Analysis
+# MAGIC ## Performing Data Analysis
 
 # COMMAND ----------
 
@@ -603,7 +650,7 @@ gold_discounts_df.createOrReplaceTempView("discounts")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Analyze Records with and without Discounts
+# MAGIC ### Analyzing Records with and without Discounts
 
 # COMMAND ----------
 
@@ -644,6 +691,11 @@ display(summary_df)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### Analyzing Discount Usage Summary
+
+# COMMAND ----------
+
 # Create a summary of discount usage to validate
 print("Discount Usage Summary:")
 spark.sql("""
@@ -669,7 +721,7 @@ ORDER BY
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Calculate Overall Margin Metrics
+# MAGIC ### Analyzing Overall Contribution Margin Metrics
 
 # COMMAND ----------
 
@@ -691,7 +743,7 @@ ORDER BY
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Analyze Contribution Margin by Product Category
+# MAGIC ### Analyzing Contribution Margin by Product Category
 
 # COMMAND ----------
 
@@ -717,7 +769,7 @@ ORDER BY
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Analyze contribution margin by discount usage
+# MAGIC ### Analyzing Contribution Margin by Discount Usage
 
 # COMMAND ----------
 
@@ -749,7 +801,7 @@ ORDER BY
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Verify Distribution of Contribution Margin Percentages
+# MAGIC ### Analyzing Distribution of Contribution Margin Percentages
 
 # COMMAND ----------
 

@@ -7,11 +7,13 @@
 # MAGIC - Identification of null values and duplicate records
 # MAGIC - Verification of Customer ID uniqueness
 # MAGIC - Removal of Academic Titles and Abbreviations from Name fields
-# MAGIC - Selective translation of Country, City,and Customer Names to English
+# MAGIC - Selective translation of Country and City to English
+# MAGIC - Translation of Customers Names to English Using Azure Translator Service
 # MAGIC - Validation of Email format integrity
 # MAGIC - Normalization of Telephone numbers through consistent formatting
 # MAGIC - Standardization of JobTitle information with appropriate default values
 # MAGIC - Standardization of text fields through consistent formatting
+# MAGIC - Saving the Cleaned and Enriched Customers Data to the Silver Layer.
 
 # COMMAND ----------
 
@@ -83,7 +85,10 @@ tmp_customers_df = spark.read.format("csv") \
 # Create a new DataFrame from the RDD with the schema to ensure nullable properties are respected
 customers_df = spark.createDataFrame(tmp_customers_df.rdd, customers_schema)
 
-print(f"Loaded {customers_df.count()} Customers Data")
+customers_df.cache()
+customers_count = customers_df.count()
+
+print(f"Loaded {customers_count} Customers Data")
 
 # COMMAND ----------
 
@@ -154,7 +159,7 @@ customers_df = customers_df.withColumn(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Selective Translation of Country, City,and Customer Names to English
+# MAGIC ## Selective Translation of Country and City to English
 
 # COMMAND ----------
 
@@ -178,10 +183,15 @@ customers_df = customers_df.withColumn(
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Translation of Customers Names to English Using Azure Translator
+
+# COMMAND ----------
+
 # Azure Translator credentials
-key = "DaPxTSE0Hdgh0Ev9N1ZpfEh1LOkpkmMm4XZ8vv9TAMsk7GIl6wBCJQQJ99BEACmepeSXJ3w3AAAbACOGSJK9"
-endpoint = "https://api.cognitive.microsofttranslator.com/"
-location = "uksouth"
+key = Azure_Translator_Key
+endpoint = Azure_Translator_endpoint
+location = Azure_Translator_location
 
 def batch_translate_api(texts, batch_size=100, max_retries=3, sleep_between_batches=1):
     """
@@ -256,10 +266,6 @@ def batch_translate_api(texts, batch_size=100, max_retries=3, sleep_between_batc
         # Sleep between batches to avoid rate limiting
         if i + batch_size < len(unique_texts):
             time.sleep(sleep_between_batches)
-            
-        # Print progress
-        # print(f"Processed {i + len(batch)}/{len(unique_texts)} unique names")
-        # Commented to Avoid Spamming the Console
     
     return translations
 
@@ -463,7 +469,7 @@ print("Customers Data Cleaning Pipeline Complete...")
 
 # MAGIC %md
 # MAGIC ## Write to Silver Layer
-# MAGIC Save the Cleaned and Enriched Employees Data to the Silver Layer.
+# MAGIC Save the Cleaned and Enriched Customers Data to the Silver Layer.
 
 # COMMAND ----------
 
@@ -482,15 +488,6 @@ customers_df.coalesce(1) \
     .save(silver_customers_path)
 
 print(f"Successfully wrote Customers Data to Silver Layer: {silver_customers_path}")
-
-# COMMAND ----------
-
-mount_path = "/mnt/data"
-save_dataframe_to_csv(
-    df=customers_df,
-    adls_path=f"/mnt/global_fashion/silver/processed",
-    filename="customers"
-)
 
 # COMMAND ----------
 

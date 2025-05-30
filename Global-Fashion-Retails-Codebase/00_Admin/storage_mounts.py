@@ -18,11 +18,12 @@ storage_account_name = "gfrdatastorage"
 container_name = "global-fashion-retails-data"
 
 # Variables for keys and IDs
-# client_secret = "YQ28Q~lZTFse-aQHPOqkeoKEcb7f4v5kqJ8gvcmb"
 scope = "db-client-secret"
 secret_key_name = "db-client-secret"
 service_credential = dbutils.secrets.get(scope= scope,key= secret_key_name)
+# Client ID
 application_id = "1c29e7f1-aef9-4c3d-a4df-fd3f11c8bf3a"
+# Tenant ID     
 directory_id = "02045b3b-9790-4008-b83c-d155576e6c7e"
 
 # ADLS directory paths
@@ -41,11 +42,7 @@ gold_mount = "/mnt/global_fashion/gold"
 # MAGIC %md
 # MAGIC ## Authentication Setup
 # MAGIC
-# MAGIC We use OAuth for authentication and Azure Key Vault with service principals to get Client Secret.
-
-# COMMAND ----------
-
-print(service_credential)
+# MAGIC We use OAuth 2.0 for authentication and Azure Key Vault with service principals to get Client Secret.
 
 # COMMAND ----------
 
@@ -102,7 +99,7 @@ def mount_adls(storage_account_name, container_name, directory, mount_point):
 
 # COMMAND ----------
 
-def unmount_if_exists(mount_point):
+def unmount_adls(mount_point):
     """
     Unmounts a mount point if it exists.
     
@@ -229,27 +226,3 @@ try:
         display(gold_files)
 except Exception as e:
     print(f"\nError accessing gold layer: {e}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Mount Point Usage Instructions
-# MAGIC
-# MAGIC Now that these mount points are established, you can use them in your processing notebooks as follows:
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Read from bronze layer
-# MAGIC
-# MAGIC bronze_stores_df = spark.read.csv(f"{bronze_mount}/GlobalFashion.Stores.csv", header=True, inferSchema=True)
-# MAGIC
-# MAGIC ### Write to silver layer
-# MAGIC silver_stores_df.write.format("delta").mode("overwrite").save(f"{silver_mount}/stores")
-# MAGIC
-# MAGIC ### Read from silver for gold transformations
-# MAGIC silver_stores_df = spark.read.format("delta").load(f"{silver_mount}/stores")
-# MAGIC
-# MAGIC ### Write to gold layer
-# MAGIC store_metrics_df.write.format("delta").mode("overwrite").save(f"{gold_mount}/store_metrics")
-# MAGIC

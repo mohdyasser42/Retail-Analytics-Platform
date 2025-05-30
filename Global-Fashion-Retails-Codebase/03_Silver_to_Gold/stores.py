@@ -2,13 +2,13 @@
 # MAGIC %md
 # MAGIC # Stores Data Transformation: Silver Layer to Gold Layer
 # MAGIC
-# MAGIC This Pipeline processes the Silver layer stores dataset and enriches it with analytical attributes:
-# MAGIC
-# MAGIC - Total Sales: Sum of all InvoiceTotalUSD by StoreID
-# MAGIC - Average Monthly Sales: Average sales per month for each store
-# MAGIC - Total Transactions: Count of distinct invoices (sales only) for each store
-# MAGIC - Other Additional metrics such as ReturnRate, MonthsOfOperation, Sales per Employee
-# MAGIC - Additional Store Performance Analysis
+# MAGIC This Pipeline processes the Silver layer Stores dataset and enriches it with analytical attributes and perform basic analysis:
+# MAGIC - Calculating Total Sales, Total Transaction Counts, and Total Return Counts for Stores Data
+# MAGIC - Calculating Average Monthly Sales, Return Rate, and Months of Operation for Stores Data
+# MAGIC - Saving the Enriched Stores Data to the Gold Layer
+# MAGIC - Analyzing Stores Performance by Country
+# MAGIC - Analyzing Stores Performance Ranking
+# MAGIC - Analyzing Underperforming Stores
 
 # COMMAND ----------
 
@@ -103,18 +103,13 @@ stores_df.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Create Store Analytics Data
+# MAGIC ## Calculating Total Sales, Total Transaction Counts, and Total Return Counts for Stores Data
 
 # COMMAND ----------
 
 # Register tables as temporary views for SQL operations
 stores_df.createOrReplaceTempView("stores")
 invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Using SQL for efficient transformations
 
 # COMMAND ----------
 
@@ -145,6 +140,11 @@ invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 # MAGIC     invoice_line_items f
 # MAGIC GROUP BY 
 # MAGIC     f.StoreID
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Calculating Average Monthly Sales, Return Rate, and Months of Operation for Stores Data
 
 # COMMAND ----------
 
@@ -199,19 +199,19 @@ gold_stores_df.cache()
 gold_stores_count = gold_stores_df.count()
 
 # Display sample enriched store data
-print("Enriched Store Data Sample:")
+print("Enriched Stores Data Sample:")
 display(gold_stores_df)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Write to Gold Layer
-# MAGIC Save the enriched Store Data to the Gold Layer.
+# MAGIC Save the enriched Stores Data to the Gold Layer.
 
 # COMMAND ----------
 
 # Save as Delta format in the Gold Layer
-print(f"Writing {gold_stores_count} store records to Gold Layer: {gold_stores_path}")
+print(f"Writing {gold_stores_count} Stores records to Gold Layer: {gold_stores_path}")
 
 # Delete existing Delta files
 dbutils.fs.rm(gold_stores_path, recurse=True)
@@ -224,7 +224,7 @@ gold_stores_df.coalesce(1) \
     .options(**DELTA_OPTIONS) \
     .save(gold_stores_path)
 
-print(f"Successfully wrote Store Data to Gold Layer: {gold_stores_path}")
+print(f"Successfully wrote {gold_stores_count} Stores Data to Gold Layer: {gold_stores_path}")
 
 # COMMAND ----------
 
@@ -261,12 +261,17 @@ gold_stores_verify_df.select("TotalSalesUSD", "AverageMonthlyUSD", "TotalTransac
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Analysis
+# MAGIC ## Performing Data Analysis
 
 # COMMAND ----------
 
 # Create a view for final reporting and visualization
 gold_stores_verify_df.createOrReplaceTempView("gold_stores_final")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyzing Stores Performance by Country
 
 # COMMAND ----------
 
@@ -288,6 +293,11 @@ gold_stores_verify_df.createOrReplaceTempView("gold_stores_final")
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### Analyzing Stores Performance Ranking
+
+# COMMAND ----------
+
 # MAGIC %sql
 # MAGIC -- Final store performance ranking
 # MAGIC SELECT 
@@ -306,6 +316,11 @@ gold_stores_verify_df.createOrReplaceTempView("gold_stores_final")
 # MAGIC     gold_stores_final
 # MAGIC ORDER BY 
 # MAGIC     SalesRank
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyzing Underperforming Stores
 
 # COMMAND ----------
 

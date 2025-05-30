@@ -14,7 +14,7 @@ import re
 
 # COMMAND ----------
 
-# Text Standardization: strip whitespace and convert to lowercase
+# Text Standardization: strip whitespace, convert to lowercase, and capitalize the first letter of each word
 def standardize_column(dataframe, column_name):
     return dataframe.withColumn(
         column_name,
@@ -184,49 +184,7 @@ def check_all_telephones_start_with_plus(df):
 
 # COMMAND ----------
 
-# Function to save a Spark DataFrame as a single CSV file in an ADLS mounted path
-def save_dataframe_to_csv(df, adls_path, filename):
-    """
-    Save a Spark DataFrame as a single CSV file in an ADLS mounted path
-    
-    Parameters:
-    - df: The Spark DataFrame to save
-    - adls_path: The mounted ADLS path (e.g., "/mnt/mydatalake/folder")
-    - filename: Name for the CSV file (without .csv extension, will be added)
-    """
-    # Ensure the filename doesn't already have .csv extension
-    if filename.endswith('.csv'):
-        filename = filename[:-4]
-    
-    # Full path where the CSV will be stored
-    output_dir = f"{adls_path}/{filename}_temp"
-    final_path = f"{adls_path}/{filename}.csv"
-    
-    # Combine all partitions into one and write
-    (df.coalesce(1)  # This is the key - forces a single output file
-        .write
-        .format("csv")
-        .option("header", "true")
-        .option("delimiter", ",")
-        .option("encoding", "UTF-8")
-        .mode("overwrite")
-        .save(output_dir))
-    
-    # Now use dbutils to rename the part file to a proper CSV name
-    part_files = dbutils.fs.ls(output_dir)
-    csv_part_file = [f for f in part_files if f.name.startswith('part-') and not f.name.endswith('.crc')][0].path
-    
-    # Move/rename the part file to the final desired CSV path
-    dbutils.fs.mv(csv_part_file, final_path)
-    
-    # Cleanup the temporary directory
-    dbutils.fs.rm(output_dir, recurse=True)
-    
-    print(f"DataFrame successfully saved as a single CSV file: {final_path}")
-
-# COMMAND ----------
-
-# Step 1: Create and populate exchange rate table using freecurrencyapi
+# Function to create and populate exchange rate table using freecurrencyapi
 def fetch_exchange_rates(apikey, path, start_date="2023-01-01", end_date="2025-04-01"):
     """
     Fetch exchange rates from freecurrencyapi for all first-of-month dates 
@@ -241,7 +199,7 @@ def fetch_exchange_rates(apikey, path, start_date="2023-01-01", end_date="2025-0
         from dateutil.relativedelta import relativedelta
         
         # Initialize client with the API key
-        api_key = apikey # "fca_live_51FEQf9X9RgeNzLLvIS117ux7GnWnAuOlRyOztcx"
+        api_key = apikey 
         client = freecurrencyapi.Client(api_key)
         
         # Define currencies
@@ -304,60 +262,16 @@ def fetch_exchange_rates(apikey, path, start_date="2023-01-01", end_date="2025-0
         
         # Create DataFrame from API data
         exchange_rates_df = spark.createDataFrame(rate_data, schema=exchange_rate_schema)
+
+        # Save exchange rates to Delta
+        exchange_rates_df.coalesce(1) \
+            .write.format("delta") \
+            .mode("overwrite") \
+            .option("overwriteSchema", "true") \
+            .save(path)
+        
+        return exchange_rates_df
         
     except ImportError:
-        print("freecurrencyapi library not available, using sample data")
-        
-        # Create sample exchange rate data covering the transaction date range
-        # This is more extensive than previous sample data to cover the full range
-        sample_data = []
-        
-        # Generate sample exchange rates for each month in the range
-        start = datetime.strptime(start_date, "%Y-%m-%d")
-        end = datetime.strptime(end_date, "%Y-%m-%d")
-        
-        # First day of month for start date
-        current = datetime(start.year, start.month, 1)
-        
-        # Sample rates - these would vary in real data but using static values for simplicity
-        # These rates are taken on 12/05/2025 18:47 UTC
-        # USD to other currencies
-        usd_to_eur = 0.90254586
-        usd_to_gbp = 0.75895728
-        usd_to_cny = 7.2030811
-        
-        # Generate sample data for each month
-        while current <= end:
-            date_obj = current.date()
-            
-            # Direct rates
-            sample_data.append((date_obj, "USD", "EUR", usd_to_eur))
-            sample_data.append((date_obj, "USD", "GBP", usd_to_gbp))
-            sample_data.append((date_obj, "USD", "CNY", usd_to_cny))
-            
-            # Inverse rates
-            sample_data.append((date_obj, "EUR", "USD", 1.0/usd_to_eur))
-            sample_data.append((date_obj, "GBP", "USD", 1.0/usd_to_gbp))
-            sample_data.append((date_obj, "CNY", "USD", 1.0/usd_to_cny))
-            
-            current = (current + relativedelta(months=1))
-        
-        # Create schema for the exchange rates
-        exchange_rate_schema = StructType([
-            StructField("RateDate", DateType(), False),
-            StructField("BaseCurrency", StringType(), False),
-            StructField("TargetCurrency", StringType(), False),
-            StructField("ExchangeRate", DoubleType(), False)
-        ])
-        
-        # Create DataFrame from sample data
-        exchange_rates_df = spark.createDataFrame(sample_data, schema=exchange_rate_schema)
-    
-    # Save exchange rates to Delta
-    exchange_rates_df.coalesce(1) \
-        .write.format("delta") \
-        .mode("overwrite") \
-        .option("overwriteSchema", "true") \
-        .save(path)
-    
-    return exchange_rates_df
+        print("freecurrencyapi library not available, please check your environment")
+        return None

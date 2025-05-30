@@ -8,6 +8,7 @@
 # MAGIC - Replacing values in the SubCategory field
 # MAGIC - Assigning Unique ID to each Discount Promotion
 # MAGIC - Standardization of text fields with consistent formatting conventions
+# MAGIC - Saving the Cleaned and Enriched Discounts Data to the Silver Layer
 
 # COMMAND ----------
 
@@ -234,7 +235,7 @@ discounts_df = discounts_df.select(columns)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Standardization of Text Fields with Consistent Formatting Conventions
+# MAGIC ## Standardization of Text Fields with Consistent Formatting
 
 # COMMAND ----------
 
@@ -254,16 +255,7 @@ print("Discounts Data Cleaning Pipeline Complete")
 
 # MAGIC %md
 # MAGIC ## Write to Silver Layer
-# MAGIC Save the Cleaned and Enriched Employees Data to the Silver Layer.
-
-# COMMAND ----------
-
-mount_path = "/mnt/data"
-save_dataframe_to_csv(
-    df=discounts_df,
-    adls_path=f"/mnt/global_fashion/silver/processed",
-    filename="discounts"
-)
+# MAGIC Save the Cleaned and Enriched Discounts Data to the Silver Layer.
 
 # COMMAND ----------
 
@@ -281,7 +273,7 @@ discounts_df.coalesce(1) \
     .options(**DELTA_OPTIONS) \
     .save(silver_discounts_path)
 
-print(f"Successfully wrote Employees Data to Silver Layer: {silver_discounts_path}")
+print(f"Successfully wrote Discounts Data to Silver Layer: {silver_discounts_path}")
 
 # COMMAND ----------
 

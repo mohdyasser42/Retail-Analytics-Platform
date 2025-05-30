@@ -7,8 +7,9 @@
 # MAGIC  - Identification of null values and duplicate records
 # MAGIC  - Validation of Employee ID uniqueness
 # MAGIC  - Removal of academic titles and abbreviations from name fields
-# MAGIC  - Translation of employee names to English
+# MAGIC  - Translation of employee names to English using Azure Translator Service
 # MAGIC  - Standardization of text fields through consistent formatting
+# MAGIC  - Saving the Cleaned and Enriched Employees Data to the Silver Layer.
 
 # COMMAND ----------
 
@@ -151,14 +152,14 @@ employees_df = employees_df.withColumn(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Translation of Employee Names to English
+# MAGIC ## Translation of Employee Names to English Using Azure Translator
 
 # COMMAND ----------
 
 # Azure Translator credentials
-key = "DaPxTSE0Hdgh0Ev9N1ZpfEh1LOkpkmMm4XZ8vv9TAMsk7GIl6wBCJQQJ99BEACmepeSXJ3w3AAAbACOGSJK9"
-endpoint = "https://api.cognitive.microsofttranslator.com/"
-location = "uksouth"
+key = Azure_Translator_Key
+endpoint = Azure_Translator_endpoint
+location = Azure_Translator_location
 
 def batch_translate_api(texts, batch_size=100, max_retries=3, sleep_between_batches=1):
     """
@@ -337,15 +338,6 @@ print("Employees Data Cleaning Pipeline Complete")
 # MAGIC %md
 # MAGIC ## Write to Silver Layer
 # MAGIC Save the Cleaned and Enriched Employees Data to the Silver Layer.
-
-# COMMAND ----------
-
-mount_path = "/mnt/data"
-save_dataframe_to_csv(
-    df=employees_df,
-    adls_path=f"/mnt/global_fashion/silver/processed",
-    filename="employees"
-)
 
 # COMMAND ----------
 

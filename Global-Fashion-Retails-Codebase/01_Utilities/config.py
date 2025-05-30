@@ -220,6 +220,13 @@ name_pattern = r'(?i)\b(B\.Sc\.|B\.A\.|Univ\.Prof\.|B\.Eng\.|MBA\.|Dipl\.-Ing\.|
 
 # COMMAND ----------
 
+# Azure Translator credentials
+Azure_Translator_Key = "DaPxTSE0Hdgh0Ev9N1ZpfEh1LOkpkmMm4XZ8vv9TAMsk7GIl6wBCJQQJ99BEACmepeSXJ3w3AAAbACOGSJK9"
+Azure_Translator_endpoint = "https://api.cognitive.microsofttranslator.com/"
+Azure_Translator_location = "uksouth"
+
+# COMMAND ----------
+
 # API Key for freecurrencyrates
 API_KEY = "fca_live_51FEQf9X9RgeNzLLvIS117ux7GnWnAuOlRyOztcx"
 
@@ -228,7 +235,6 @@ API_KEY = "fca_live_51FEQf9X9RgeNzLLvIS117ux7GnWnAuOlRyOztcx"
 # Helper Functions
 
 # These functions provide easy access to configuration values.
-
 def get_bronze_path(dataset_name):
     """Gets the bronze layer path for a dataset."""
     return BRONZE_PATHS.get(dataset_name)

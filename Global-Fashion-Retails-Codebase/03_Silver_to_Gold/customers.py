@@ -2,14 +2,18 @@
 # MAGIC %md
 # MAGIC # Customers Data Transformation: Silver Layer to Gold Layer
 # MAGIC
-# MAGIC This Pipeline processes the Silver layer customers dataset and enriches it with analytical attributes:
-# MAGIC
-# MAGIC - Age: Calculated from DateOfBirth
-# MAGIC - AgeGroup: Categorization of customers into age segments
-# MAGIC - IsParent: Boolean indicating if customer purchased children's products above threshold
-# MAGIC - Total Spending: Sum of all purchases in USD by the customer
-# MAGIC - No of Invoices: Count of distinct invoices associated with the customer
-# MAGIC - Average Spending: Average amount spent per invoice by the customer
+# MAGIC This Pipeline processes the Silver layer Customers dataset and enriches it with analytical attributes and perform basic analysis:
+# MAGIC - Calculating Customer Age and Age Group
+# MAGIC - Identifying Parent Customers Based on Purchase of Children's Products Above Threshold
+# MAGIC - Calculating Total Spendings, Number of Sales Invoices, and Average Spending Per Invoice for Customers Data
+# MAGIC - Performing Customer Segmentation using RFM Analysis
+# MAGIC - Joining RFM Customer Segmentation and Recency to Customers Data
+# MAGIC - Saving the Enriched Customer Data to the Gold Layer
+# MAGIC - Analyzing Customer Age Distribution
+# MAGIC - Analyzing Customer Age vs. Spending Patterns
+# MAGIC - Analyzing Customer Segments by Age Group
+# MAGIC - Analyzing Customer Segments by Country
+# MAGIC - Analyzing Metrics by Customer Segments
 
 # COMMAND ----------
 
@@ -89,13 +93,6 @@ print(f"Loaded {invoice_line_items_df.count()} invoice records")
 
 # COMMAND ----------
 
-tmp_customers_df = spark.read.format(file_format).load(silver_customers_path)
-customers_df = spark.createDataFrame(tmp_customers_df.rdd, customers_schema)
-customers_df.cache()
-print(f"Loaded {customers_df.count()} customer records")
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## Data Exploration and Profiling
 
@@ -114,7 +111,7 @@ customers_df.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Calculate Customer Age and Age Group
+# MAGIC ## Calculating Customer Age and Age Group
 
 # COMMAND ----------
 
@@ -174,26 +171,14 @@ customers_df = customers_df_with_age.withColumn(
 
 # COMMAND ----------
 
-# Display age distribution
-print("Customer Age Distribution:")
-customers_df.cache()
-display(customers_df.groupBy("AgeGroup").count().orderBy("AgeGroup"))
-
-# COMMAND ----------
-
 # MAGIC %md
-# MAGIC ## Create Customer Analytics Data
+# MAGIC ## Identifying Parent Customers Based on Purchase of Children's Products Above Threshold
 
 # COMMAND ----------
 
 # Register tables as temporary views for SQL operations
 customers_df.createOrReplaceTempView("customers")
 invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Using SQL for efficient transformations
 
 # COMMAND ----------
 
@@ -211,6 +196,11 @@ invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 # MAGIC         CustomerID
 # MAGIC     HAVING 
 # MAGIC         COUNT(*) >= 2
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Calculating Total Spendings, Number of Sales Invoices, and Average Spending Per Invoice for Customers Data
 
 # COMMAND ----------
 
@@ -277,12 +267,7 @@ gold_customers_df.select("TotalSpending","NoOfInvoices","AverageSpending").summa
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## RFM Analysis (Recency, Frequency, Monetary) for Customer Segmentation
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Calculate Recency (days since last purchase)
+# MAGIC ## Performing Customer Segmentation using RFM Analysis
 
 # COMMAND ----------
 
@@ -309,7 +294,7 @@ invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 
 # MAGIC %sql
 # MAGIC -- Calculate RFM metrics
-# MAGIC -- Using the value of last_date_str to calculate the recency metric
+# MAGIC -- Using the value of last_date_str to calculate the recency metric (days since last purchase)
 # MAGIC CREATE OR REPLACE TEMPORARY VIEW customer_rfm AS
 # MAGIC SELECT 
 # MAGIC     c.CustomerID,
@@ -324,11 +309,11 @@ invoice_line_items_df.createOrReplaceTempView("invoice_line_items")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Score RFM Dimensions and Create RFM Segments
+# MAGIC ### Scoring RFM Dimensions and Creating RFM Segments
 
 # COMMAND ----------
 
-# Create quintiles for RFM metrics
+# Creating Scores for RFM metrics
 rfm_df = spark.sql("""
 SELECT 
     *,
@@ -377,6 +362,11 @@ display(rfm_segments_df.limit(10))
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Joining RFM Customer Segmentation and Recency to Customers Data
+
+# COMMAND ----------
+
 gold_customers_df = gold_customers_df.join(rfm_segments_df.select("CustomerID", "RFM_Segment", "Recency" ), on="CustomerID", how="left")
 gold_customers_df.cache()
 gold_customers_count = gold_customers_df.count()
@@ -394,7 +384,7 @@ display(gold_customers_df)
 # COMMAND ----------
 
 # Save as Delta format in the Gold Layer
-print(f"Writing {gold_customers_count} customer records to Gold Layer: {gold_customers_path}")
+print(f"Writing {gold_customers_count} Customer records to Gold Layer: {gold_customers_path}")
 
 # Delete existing Delta files
 dbutils.fs.rm(gold_customers_path, recurse=True)
@@ -407,7 +397,7 @@ gold_customers_df.coalesce(1) \
     .options(**DELTA_OPTIONS) \
     .save(gold_customers_path)
 
-print(f"Successfully wrote Customer Data to Gold Layer: {gold_customers_path}")
+print(f"Successfully wrote {gold_customers_count} Customer Data to Gold Layer: {gold_customers_path}")
 
 # COMMAND ----------
 
@@ -442,16 +432,27 @@ gold_customers_verify_df.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Analysis
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Analyze Customer Age vs. Spending Patterns
+# MAGIC ## Performing Data Analysis
 
 # COMMAND ----------
 
 gold_customers_verify_df.createOrReplaceTempView("customer_segments")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyzing Customer Age Distribution
+
+# COMMAND ----------
+
+# Display age distribution
+print("Customer Age Distribution:")
+display(gold_customers_verify_df.groupBy("AgeGroup").count().orderBy("AgeGroup"))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyzing Customer Age vs. Spending Patterns
 
 # COMMAND ----------
 
@@ -470,7 +471,7 @@ display(age_spending_analysis)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Segment Analysis by Age Group
+# MAGIC ### Analyzing Customer Segments by Age Group
 
 # COMMAND ----------
 
@@ -492,7 +493,7 @@ display(age_spending_analysis)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Segment analysis by country
+# MAGIC ### Analyzing Customer Segments by Country
 
 # COMMAND ----------
 
@@ -514,12 +515,12 @@ display(age_spending_analysis)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Analyze metrics by segment
+# MAGIC ### Analyzing Metrics by Customer Segments
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC -- Analyze metrics by segment
+# MAGIC -- Analyzing Metrics by Customer Segments
 # MAGIC CREATE OR REPLACE TEMP VIEW segment_metrics AS
 # MAGIC SELECT 
 # MAGIC     RFM_Segment,
@@ -544,21 +545,3 @@ segment_metrics_df = spark.sql("SELECT * FROM segment_metrics")
 segment_metrics_df.cache()
 segment_metrics_count = segment_metrics_df.count()
 display(segment_metrics_df)
-
-# COMMAND ----------
-
-# Save as Delta format in the Gold Layer
-print(f"Writing {segment_metrics_count} records to Gold Layer: {gold_segment_metrics_path}")
-
-# Delete existing Delta files
-dbutils.fs.rm(gold_segment_metrics_path, recurse=True)
-
-# Apply Delta optimizations
-segment_metrics_df.coalesce(1) \
-    .write \
-    .format(file_format) \
-    .mode(write_mode) \
-    .options(**DELTA_OPTIONS) \
-    .save(gold_segment_metrics_path)
-
-print(f"Successfully wrote records to Gold Layer: {gold_segment_metrics_path}")
