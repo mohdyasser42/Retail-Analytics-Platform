@@ -35,7 +35,7 @@ executive_dashboard = st.container()
 
 with executive_dashboard:
     # Main content area
-    st.subheader("Analysis Dashboard")
+    st.subheader("Analytics Dashboard")
     # Get the embed code from Power BI
     powerbi_embed_code = """
     <div style="display: flex; justify-content: center; width: 100%; height: 100%">

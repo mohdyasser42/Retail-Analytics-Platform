@@ -54,7 +54,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Dashboard", "Overview", "Store Profile", "Geo
 
 # Analysis Dashboard tab
 with tab1:
-    st.subheader("Analysis Dashboard")
+    st.subheader("Store Analytics Dashboard")
 
     # Get the embed code from Power BI
     powerbi_embed_code = """

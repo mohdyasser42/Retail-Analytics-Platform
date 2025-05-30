@@ -40,7 +40,7 @@ tab1, tab2 = st.tabs(["Dashboard", "Customer Profile"])
 
 # Analysis Dashboard tab
 with tab1:
-    st.subheader("Customer Analysis Dashboard")
+    st.subheader("Customer Analytics Dashboard")
 
     # Get the embed code from Power BI
     powerbi_embed_code = """
