@@ -54,31 +54,6 @@ def get_datalake_service_client():
         credential=credential
     )
     return service_client
-
-# Function to read CSV files from ADLS Gen2
-@st.cache_data
-def read_csv_from_adls(container_name, file_path):
-    try:
-        # Get the service client
-        service_client = get_datalake_service_client()
-        
-        # Get a file system client
-        file_system_client = service_client.get_file_system_client(file_system=container_name)
-        
-        # Get a file client
-        file_client = file_system_client.get_file_client(file_path)
-        
-        # Download the file content
-        download = file_client.download_file()
-        downloaded_bytes = download.readall()
-        
-        # Convert to a pandas dataframe
-        df = pd.read_csv(io.BytesIO(downloaded_bytes))
-        return df
-    
-    except Exception as e:
-        st.error(f"Error reading file from ADLS: {e}")
-        return None
     
 # Function to read Parquet files from ADLS Gen2
 @st.cache_data
@@ -201,11 +176,5 @@ def fetch_customer_bytelephone(telephone):
 def fetch_invoice_fact_data(id):  
     engine = get_database_engine()
     query = f"SELECT [InvoiceID], [CustomerID], [Date], [Time], [StoreID], [StoreCountry], [StoreCity], [EmployeeID], [TotalQuantity], [Currency], [CurrencySymbol], [TransactionType], [PaymentMethod], [InvoiceTotal], [InvoiceTotalUSD] FROM [GlobalFashion].[InvoiceFact] Where CustomerID = {id} ORDER BY [Date] DESC, [Time] DESC"
-    return pd.read_sql(query, engine)
-
-@st.cache_data(ttl=86400)
-def fetch_invoice_line_items_data(id):  
-    engine = get_database_engine()
-    query = f"SELECT * FROM [GlobalFashion].[InvoiceLineItems] Where CustomerID = {id} ORDER BY [Date] DESC"
     return pd.read_sql(query, engine)
 
