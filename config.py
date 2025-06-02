@@ -13,8 +13,6 @@ import io
 def get_client_secret():
     KVUri = f"https://gfr-key-vault.vault.azure.net/"
     secretName = st.secrets["get_secret_keyvault"]["client_secret_name"]
-
-
     tenant_id = st.secrets["get_secret_keyvault"]["tenant_id"]
     client_id = st.secrets["get_secret_keyvault"]["client_id"]
     client_secret = st.secrets["get_secret_keyvault"]["client_secret"]
