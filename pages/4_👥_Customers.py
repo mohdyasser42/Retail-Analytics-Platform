@@ -45,7 +45,7 @@ with tab1:
     # Get the embed code from Power BI
     powerbi_embed_code = """
     <div style="display: flex; justify-content: center; width: 100%; height: 100%">
-        <iframe title="Customers" width="1024" height="1500" src="https://app.powerbi.com/view?r=eyJrIjoiODIxMWQyOWItNzhkMy00MGYzLTk4NDItOTk0YzY4MzNmNjUzIiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe>
+        <iframe title="Customers (2)" width="1024" height="1500" src="https://app.powerbi.com/view?r=eyJrIjoiODU1NmYwOWYtMzVlMS00YzBkLWJlYWUtNTA1Zjg1ZTM5NDNhIiwidCI6IjAyMDQ1YjNiLTk3OTAtNDAwOC1iODNjLWQxNTU1NzZlNmM3ZSIsImMiOjh9&pageName=0a03ef24ee7822886499" frameborder="0" allowFullScreen="true"></iframe>
     </div>
     """
 
